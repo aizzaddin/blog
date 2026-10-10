@@ -12,6 +12,7 @@ const {
 } = require('./content');
 
 const app = express();
+app.disable('x-powered-by');
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const UPLOAD_DIR = path.join(PUBLIC_DIR, 'uploads');
@@ -30,7 +31,7 @@ app.get('/healthz', async (req, res) => {
     await db.query('SELECT 1');
     res.json({ ok: true });
   } catch {
-    res.status(503).json({ ok: false, error: 'Database unreachable' });
+    res.status(503).json({ ok: false });
   }
 });
 
@@ -45,6 +46,22 @@ app.locals.coverImage = coverImage;
 app.locals.formatDate = formatDate;
 app.locals.initials = (name = '') => name.split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 app.locals.siteName = process.env.SITE_NAME || 'wildanaizzaddin';
+
+// Versioned URLs for CSS and JS (/style.css?v=…), so browsers fetch the new file after every change
+// instead of reusing a cached copy. Versions are cached in production, where files don't change.
+const assetVersions = new Map();
+app.locals.asset = (file) => {
+  let version = assetVersions.get(file);
+  if (!version) {
+    try {
+      version = Math.round(fs.statSync(path.join(PUBLIC_DIR, file)).mtimeMs).toString(36);
+    } catch {
+      version = '0';
+    }
+    if (process.env.NODE_ENV === 'production') assetVersions.set(file, version);
+  }
+  return `/${file}?v=${version}`;
+};
 // Defaults so error pages render even if the session couldn't be loaded.
 app.locals.me = null;
 app.locals.currentPath = '';
@@ -127,13 +144,13 @@ app.post('/about/edit', requireWriter, wrap(async (req, res) => {
 
 app.get('/login', (req, res) => {
   if (req.author) return res.redirect(auth.safeNext(req.query.next));
-  res.render('login', { title: 'Sign in', email: '', next: auth.safeNext(req.query.next), error: null });
+  res.render('login', { title: 'Sign in', noindex: true, email: '', next: auth.safeNext(req.query.next), error: null });
 });
 
 app.post('/login', wrap(async (req, res) => {
   const email = String(req.body.email || '').trim();
   const next = auth.safeNext(req.body.next);
-  const fail = (status, error) => res.status(status).render('login', { title: 'Sign in', email, next, error });
+  const fail = (status, error) => res.status(status).render('login', { title: 'Sign in', noindex: true, email, next, error });
 
   if (!auth.sameOrigin(req)) return fail(403, 'This sign-in came from another site and was blocked.');
   const wait = auth.loginBlocked(req.ip);

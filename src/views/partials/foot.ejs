@@ -4,7 +4,7 @@
       <p>© <%= new Date().getFullYear() %> <%= siteName %></p>
     </div>
   </footer>
-  <script src="/app.js" defer></script>
-  <% if (typeof scripts !== 'undefined') { scripts.forEach((src) => { %><script src="<%= src %>" defer></script><% }) } %>
+  <script src="<%= asset('app.js') %>" defer></script>
+  <% if (typeof scripts !== 'undefined') { scripts.forEach((src) => { %><script src="<%= asset(src.replace(/^\//, '')) %>" defer></script><% }) } %>
 </body>
 </html>

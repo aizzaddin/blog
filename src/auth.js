@@ -99,9 +99,10 @@ function requireAuth(req, res, next) {
     return res.status(403).send('This request came from another site and was blocked.');
   }
   if (req.author) return next();
-  if (req.method === 'GET') return res.redirect(`/login?next=${encodeURIComponent(req.originalUrl)}`);
+  // The editor's image upload needs a clear message if the session ran out.
   if (req.accepts(['html', 'json']) === 'json') return res.status(401).json({ error: 'Sign in again to continue.' });
-  return res.redirect('/login');
+  // To visitors, private pages look like any page that doesn't exist.
+  return res.status(404).render('not-found', { title: 'Page not found' });
 }
 
 // Slows down password guessing: 5 failed attempts per address, then a 15-minute wait.
