@@ -1,0 +1,28 @@
+<%- include('partials/head', { title }) %>
+<div class="<%= ui.column %>">
+  <header class="border-b border-rule pt-12 pb-6">
+    <h1 class="text-[2.5rem] leading-[1.1] font-light tracking-[-0.02em]">Topics</h1>
+    <p class="mt-2 text-ink-soft"><%= topics.length %> <%= topics.length === 1 ? 'topic' : 'topics' %>, most written about first.</p>
+  </header>
+
+  <% if (!topics.length) { %>
+    <p class="<%= ui.empty %>">No topics yet. Add topics to a story when you publish it and they’ll show up here.</p>
+  <% } %>
+
+  <ul>
+    <% topics.forEach((t) => { %>
+      <li class="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 border-b border-rule py-7 last:border-b-0">
+        <h2 class="text-[1.75rem] leading-tight font-light tracking-[-0.015em]">
+          <a class="decoration-1 underline-offset-4 hover:underline" href="/tag/<%= t.slug %>"><%= t.name %></a>
+        </h2>
+        <p class="text-sm text-ink-soft tabular-nums"><%= t.total %> <%= t.total === 1 ? 'story' : 'stories' %></p>
+        <ul class="col-span-full mt-3 grid gap-1.5">
+          <% t.latest.forEach((p) => { %>
+            <li class="truncate text-[0.9375rem] text-ink-soft"><a class="hover:text-ink hover:underline" href="/p/<%= p.slug %>"><%= p.title %></a></li>
+          <% }) %>
+        </ul>
+      </li>
+    <% }) %>
+  </ul>
+</div>
+<%- include('partials/foot') %>

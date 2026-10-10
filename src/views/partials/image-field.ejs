@@ -1,0 +1,10 @@
+<%# Image picker that uploads right away and keeps the URL in a hidden field. Params: name, value, alt, shape. %>
+<div data-image-field>
+  <input type="hidden" name="<%= name %>" value="<%= value || '' %>" data-role="input">
+  <img class="mt-3 bg-wash object-cover <%= shape %>" src="<%= value || '' %>" alt="<%= alt %>" data-role="preview" <%= value ? '' : 'hidden' %>>
+  <div class="mt-3 flex flex-wrap gap-2">
+    <button type="button" class="<%= ui.buttonQuiet %>" data-role="upload"><%= value ? 'Replace image' : 'Upload image' %></button>
+    <button type="button" class="<%= ui.buttonQuiet %>" data-role="remove" <%= value ? '' : 'hidden' %>>Remove</button>
+  </div>
+  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" data-role="file" hidden>
+</div>

@@ -1,0 +1,54 @@
+{
+  "name": "blog",
+  "version": "1.0.0",
+  "description": "Blog minimalis bergaya Medium dengan Express dan PostgreSQL",
+  "homepage": "https://github.com/aizzaddin/blog#readme",
+  "bugs": {
+    "url": "https://github.com/aizzaddin/blog/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aizzaddin/blog.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "concurrently --kill-others --names css,js,server --prefix-colors gray,gray,blue \"npm:watch:css\" \"npm:watch:js\" \"npm:watch:server\"",
+    "watch:css": "tailwindcss -i src/styles/app.css -o public/style.css --watch=always",
+    "watch:js": "npm run build:js -- --watch=forever",
+    "watch:server": "node --watch src/server.js",
+    "build:css": "tailwindcss -i src/styles/app.css -o public/style.css --minify",
+    "build:js": "esbuild src/editor/editor.js --bundle --minify --format=iife --target=es2020 --outfile=public/editor.js",
+    "build": "npm run build:css && npm run build:js",
+    "start": "npm run build && node src/server.js",
+    "db:migrate": "node db/migrate.js",
+    "db:seed": "node db/seed.js",
+    "set-password": "node db/set-password.js"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.7",
+    "ejs": "^7.0.1",
+    "express": "^5.3.0",
+    "highlight.js": "^11.12.0",
+    "marked": "^18.1.0",
+    "multer": "^2.4.0",
+    "pg": "^8.23.1",
+    "sanitize-html": "^2.18.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "@tiptap/core": "^3.31.4",
+    "@tiptap/extension-code-block-lowlight": "^3.31.4",
+    "@tiptap/extension-image": "^3.31.4",
+    "@tiptap/extension-youtube": "^3.31.4",
+    "@tiptap/extensions": "^3.31.4",
+    "@tiptap/pm": "^3.31.4",
+    "@tiptap/starter-kit": "^3.31.4",
+    "concurrently": "^10.0.6",
+    "esbuild": "^0.28.2",
+    "lowlight": "^3.3.0",
+    "tailwindcss": "^4.3.3"
+  }
+}

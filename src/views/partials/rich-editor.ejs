@@ -1,0 +1,60 @@
+<%#
+  Rich text editor: toolbar + editing surface. The HTML is posted as `body`.
+  Params: html (initial content), placeholder, label.
+%>
+<%
+  const tool = 'grid size-8 flex-none cursor-pointer place-items-center rounded text-ink-soft hover:bg-wash hover:text-ink aria-pressed:bg-ink aria-pressed:text-paper disabled:cursor-default disabled:opacity-40';
+  const icon = (paths) => `<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+  const tools = [
+[{ cmd: 'bold', label: 'Bold (⌘B)', svg: icon('<path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z"/>') },
+ { cmd: 'italic', label: 'Italic (⌘I)', svg: icon('<path d="M10 5h8M6 19h8M14 5l-4 14"/>') },
+ { cmd: 'underline', label: 'Underline (⌘U)', svg: icon('<path d="M7 4v7a5 5 0 0 0 10 0V4M5 20h14"/>') },
+ { cmd: 'link', label: 'Link', svg: icon('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>') },
+ { cmd: 'code', label: 'Inline code', svg: icon('<path d="m9 8-4 4 4 4M15 8l4 4-4 4"/>') }],
+[{ cmd: 'bulletList', label: 'Bulleted list', svg: icon('<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r=".6"/><circle cx="4.5" cy="12" r=".6"/><circle cx="4.5" cy="18" r=".6"/>') },
+ { cmd: 'orderedList', label: 'Numbered list', svg: icon('<path d="M10 6h10M10 12h10M10 18h10M4 5l1.5-1v5M3.5 14h2.5l-2.5 3.5H6"/>') },
+ { cmd: 'blockquote', label: 'Quote', svg: icon('<path d="M5 6v12M10 8h9M10 12h9M10 16h6"/>') },
+ { cmd: 'codeBlock', label: 'Code block', svg: icon('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m9.5 10-2 2 2 2M14.5 10l2 2-2 2"/>') }],
+[{ cmd: 'image', label: 'Add image', svg: icon('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m21 16-5-5-9 9"/>') },
+ { cmd: 'video', label: 'Embed YouTube video', svg: icon('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>') },
+ { cmd: 'horizontalRule', label: 'Section break', svg: icon('<path d="M4 12h16"/>') }],
+[{ cmd: 'undo', label: 'Undo (⌘Z)', svg: icon('<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>') },
+ { cmd: 'redo', label: 'Redo (⇧⌘Z)', svg: icon('<path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>') }],
+  ];
+%>
+<div class="sticky top-0 z-10 mt-8 border-y border-rule bg-paper">
+  <div class="flex flex-wrap items-center gap-0.5 py-1.5" role="toolbar" aria-label="Formatting" aria-controls="editor">
+    <label class="sr-only" for="block-type">Text style</label>
+    <select id="block-type" class="h-8 cursor-pointer rounded bg-transparent px-2 text-sm text-ink hover:bg-wash focus:outline-none">
+      <option value="paragraph">Paragraph</option>
+      <option value="h2">Heading</option>
+      <option value="h3">Subheading</option>
+    </select>
+    <% tools.forEach((group) => { %>
+      <span class="mx-0.5 h-5 w-px bg-rule" aria-hidden="true"></span>
+      <% group.forEach((t) => { %>
+        <button type="button" class="<%= tool %>" data-cmd="<%= t.cmd %>" aria-label="<%= t.label %>" title="<%= t.label %>" <%- ['undo', 'redo', 'image', 'video', 'link', 'horizontalRule'].includes(t.cmd) ? '' : 'aria-pressed="false"' %>><%- t.svg %></button>
+      <% }) %>
+    <% }) %>
+    <span id="code-language-wrap" class="ml-auto flex items-center gap-2 text-sm text-ink-soft" hidden>
+      <label for="code-language">Language</label>
+      <select id="code-language" class="h-8 cursor-pointer rounded border border-rule bg-surface px-2 text-ink focus:border-ink focus:outline-none">
+        <% Object.entries(languages).forEach(([key, label]) => { %><option value="<%= key %>"><%= label %></option><% }) %>
+      </select>
+    </span>
+  </div>
+  <div id="prompt-bar" class="flex items-center gap-2 border-t border-rule py-2" hidden>
+    <label class="sr-only" for="prompt-input" id="prompt-label">Link</label>
+    <input id="prompt-input" type="url" class="<%= ui.input %>" autocomplete="off">
+    <button type="button" id="prompt-apply" class="<%= ui.button %> flex-none">Apply</button>
+    <button type="button" id="prompt-remove" class="<%= ui.buttonQuiet %> flex-none" hidden>Remove link</button>
+    <button type="button" id="prompt-cancel" class="<%= ui.buttonQuiet %> flex-none">Cancel</button>
+  </div>
+</div>
+
+<p id="editor-status" class="mt-2 min-h-5 text-sm text-ink-soft" role="status" aria-live="polite"></p>
+<div id="editor" class="prose prose-editor min-h-[50vh]" data-placeholder="<%= placeholder %>"></div>
+<label class="sr-only" id="body-label" for="body"><%= label %></label>
+<textarea id="body" name="body" hidden><%= html %></textarea>
+<noscript><p class="mt-4 <%= ui.quiet %>">The editor needs JavaScript. Turn it on to edit this text.</p></noscript>
+<input type="file" id="image-file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" hidden>

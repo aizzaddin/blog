@@ -1,0 +1,12 @@
+node_modules
+.git
+.env
+.env.*
+!.env.example
+public/uploads
+public/style.css
+public/editor.js
+npm-debug.log*
+Dockerfile
+docker-compose.yml
+.dockerignore

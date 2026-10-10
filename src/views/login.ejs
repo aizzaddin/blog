@@ -1,0 +1,21 @@
+<%- include('partials/head', { title }) %>
+<div class="mx-auto max-w-sm pt-20 pb-10">
+  <h1 class="text-[2.5rem] leading-[1.1] font-light tracking-[-0.02em]">Sign in</h1>
+  <p class="mt-2 text-ink-soft">Sign in to write, edit and publish stories.</p>
+
+  <% if (error) { %><p class="mt-6 border-l-[3px] border-ink bg-wash px-4 py-3" role="alert"><%= error %></p><% } %>
+
+  <form class="mt-8 grid gap-5" method="post" action="/login">
+    <input type="hidden" name="next" value="<%= next %>">
+    <div class="grid gap-2">
+      <label class="font-medium" for="email">Email</label>
+      <input class="<%= ui.input %>" id="email" name="email" type="email" autocomplete="username" required value="<%= email %>" <%= email ? '' : 'autofocus' %>>
+    </div>
+    <div class="grid gap-2">
+      <label class="font-medium" for="password">Password</label>
+      <input class="<%= ui.input %>" id="password" name="password" type="password" autocomplete="current-password" required <%= email ? 'autofocus' : '' %>>
+    </div>
+    <button class="mt-2 <%= ui.button %>" type="submit">Sign in</button>
+  </form>
+</div>
+<%- include('partials/foot') %>

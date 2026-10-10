@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+@source "../views";
+@source "../ui.js";
+@source "../editor";
+@source "../../public/app.js";
+
+/* Neutral greys, one family (Open Sans; Roboto Mono for code). Hierarchy comes from weight and size, not colour.
+   Colours are variables so dark mode swaps them without dark: prefixes in templates. */
+@theme {
+  --font-sans: "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, Menlo, monospace;
+
+  --color-paper: #f3f3f3;
+  --color-surface: #ffffff;
+  --color-ink: #2e2e2e;
+  --color-ink-soft: #6e6e6e;
+  --color-rule: #dadada;
+  --color-wash: #e6e6e6;
+  --color-select: #cfcfcf;
+  --color-code: #2a2a2a;
+  --color-code-bar: #333333;
+  --color-code-rule: #3d3d3d;
+
+  --container-measure: 680px;
+
+  --animate-burst: burst 700ms ease-out;
+  @keyframes burst {
+    0% { opacity: 0; transform: translateY(6px); }
+    25% { opacity: 1; transform: translateY(-4px); }
+    75% { opacity: 1; transform: translateY(-8px); }
+    100% { opacity: 0; transform: translateY(-12px); }
+  }
+}
+
+@layer base {
+  /* Theme: follows the system unless the reader picks Light or Night (data-theme on <html>). */
+  :root { color-scheme: light; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --color-paper: #1f1f1f;
+      --color-surface: #262626;
+      --color-ink: #e2e2e2;
+      --color-ink-soft: #9b9b9b;
+      --color-rule: #383838;
+      --color-wash: #2e2e2e;
+      --color-select: #4a4a4a;
+      --color-code: #151515;
+      --color-code-bar: #1b1b1b;
+      --color-code-rule: #2f2f2f;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --color-paper: #1f1f1f;
+    --color-surface: #262626;
+    --color-ink: #e2e2e2;
+    --color-ink-soft: #9b9b9b;
+    --color-rule: #383838;
+    --color-wash: #2e2e2e;
+    --color-select: #4a4a4a;
+    --color-code: #151515;
+    --color-code-bar: #1b1b1b;
+    --color-code-rule: #2f2f2f;
+    color-scheme: dark;
+  }
+
+  /* Theme button: a sun while the page is dark, a moon while it's light. */
+  :root [data-show-when="dark"] { display: none; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) [data-show-when="dark"] { display: contents; }
+    :root:not([data-theme="light"]) [data-show-when="light"] { display: none; }
+  }
+  :root[data-theme="dark"] [data-show-when="dark"] { display: contents; }
+  :root[data-theme="dark"] [data-show-when="light"] { display: none; }
+
+  ::selection { background: var(--color-select); color: var(--color-ink); }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+}
+
+/* Story body: rendered from Markdown, so it can't carry utility classes. */
+@layer components {
+  .prose {
+    @apply pt-3 text-lg leading-[1.75] wrap-break-word max-sm:text-[1.0625rem];
+  }
+  .prose > * { @apply mt-[1.6em]; }
+  .prose h2 { @apply mt-[2em] text-2xl leading-snug font-medium tracking-[-0.01em]; }
+  .prose h3 { @apply mt-[1.8em] text-[1.3125rem] leading-snug font-medium; }
+  .prose h2 + *, .prose h3 + * { @apply mt-[0.5em]; }
+  .prose a { @apply underline decoration-1 underline-offset-[3px]; }
+  .prose strong { @apply font-bold; }
+  .prose blockquote { @apply border-l-[3px] border-ink pl-[22px] text-ink-soft; }
+  .prose blockquote p { @apply m-0; }
+  .prose ul { @apply list-disc pl-[1.4em]; }
+  .prose ol { @apply list-decimal pl-[1.4em]; }
+  .prose li + li { @apply mt-[0.4em]; }
+  .prose code { @apply rounded bg-wash px-[0.35em] py-[0.1em] font-mono text-[0.85em]; }
+  .prose pre {
+    @apply overflow-x-auto rounded-md bg-code px-5 py-4 font-mono text-[0.875rem] leading-[1.65] text-[#d4d4d4];
+    tab-size: 2;
+  }
+  .prose pre code { @apply rounded-none bg-transparent p-0 text-[length:inherit] text-inherit; }
+  .prose img { @apply mx-auto block h-auto max-w-full rounded-sm; }
+  .prose div[data-youtube-video] iframe { @apply aspect-video h-auto w-full rounded-sm; }
+  .prose hr { @apply my-[2.4em] h-auto overflow-visible border-0 text-center; }
+  .prose hr::after { content: "\2042"; @apply text-xl text-ink-soft; }
+}
+
+/* Code snapshot: a dark grey panel with the language and a copy button.
+   Syntax colouring stays greyscale: brightness, weight and italics carry the meaning. */
+@layer components {
+  .code-snap { @apply overflow-hidden rounded-md bg-code; }
+  @media (min-width: 800px) {
+    .code-snap { margin-inline: -40px; }
+  }
+  .code-snap-bar {
+    @apply flex items-center justify-between border-b border-code-rule bg-code-bar py-1.5 pr-2 pl-5 text-[0.8125rem] text-[#a3a3a3];
+  }
+  .code-copy {
+    @apply cursor-pointer rounded px-2.5 py-1 text-[#d4d4d4] hover:bg-code-rule focus-visible:outline-[#d4d4d4];
+  }
+  .code-snap pre { @apply m-0 rounded-none; }
+  @media (min-width: 800px) {
+    .code-snap pre { @apply px-10; }
+    .code-snap-bar { @apply pl-10; }
+  }
+
+  .hljs-comment, .hljs-quote { color: #7c7c7c; font-style: italic; }
+  .hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-type, .hljs-built_in, .hljs-doctag { color: #ffffff; font-weight: 500; }
+  .hljs-string, .hljs-regexp, .hljs-char.escape_, .hljs-template-tag { color: #a6a6a6; }
+  .hljs-number, .hljs-symbol, .hljs-bullet { color: #e8e8e8; }
+  .hljs-title, .hljs-section, .hljs-name {
+    color: #f5f5f5;
+    text-decoration: underline;
+    text-decoration-color: #5c5c5c;
+    text-underline-offset: 3px;
+  }
+  .hljs-attr, .hljs-attribute, .hljs-property, .hljs-variable, .hljs-params, .hljs-selector-class, .hljs-selector-id { color: #c4c4c4; }
+  .hljs-meta, .hljs-punctuation, .hljs-operator, .hljs-tag { color: #969696; }
+  .hljs-addition { color: #f0f0f0; background: rgb(255 255 255 / 0.07); }
+  .hljs-deletion { color: #8a8a8a; text-decoration: line-through; }
+  .hljs-emphasis { font-style: italic; }
+  .hljs-strong { font-weight: 700; }
+}
+
+/* Editor surface */
+@layer components {
+  .prose-editor { padding-top: 0; }
+  .prose-editor .ProseMirror > :first-child { margin-top: 0.5em; }
+  .prose-editor .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    @apply pointer-events-none float-left h-0 text-ink-soft/80;
+  }
+  .prose-editor .ProseMirror-selectednode { @apply outline-2 outline-offset-2 outline-ink; }
+  .prose-editor .ProseMirror div[data-youtube-video] { @apply cursor-move; }
+  .prose-editor .ProseMirror-gapcursor::after { @apply border-ink; }
+}

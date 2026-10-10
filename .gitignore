@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.local
+# Built by Tailwind (npm run build:css)
+public/style.css
+public/editor.js
+# Images uploaded from the editor
+public/uploads/

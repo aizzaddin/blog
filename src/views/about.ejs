@@ -1,0 +1,31 @@
+<%- include('partials/head', { title, description: owner.bio }) %>
+<article class="<%= ui.column %>">
+  <header class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-6 border-b border-rule pt-14 pb-8 max-sm:grid-cols-1 max-sm:gap-y-5">
+    <%- include('partials/byline', { p: { avatar_url: owner.avatar_url, author_name: owner.name }, size: 'size-28 text-3xl max-sm:size-20 max-sm:text-2xl' }) %>
+    <div>
+      <h1 class="text-[clamp(2.25rem,6vw,3rem)] leading-[1.08] font-light tracking-[-0.025em]"><%= owner.name %></h1>
+      <% if (owner.bio) { %><p class="mt-2 text-lg text-ink-soft"><%= owner.bio %></p><% } %>
+    </div>
+  </header>
+
+  <% if (html) { %>
+    <div class="prose"><%- html %></div>
+  <% } else { %>
+    <p class="<%= ui.empty %>">There’s nothing here yet.</p>
+  <% } %>
+
+  <% if (me && me.id === owner.id) { %>
+    <p class="mt-10"><a class="<%= ui.buttonQuiet %>" href="/about/edit">Edit this page</a></p>
+  <% } %>
+
+  <% if (recent.length) { %>
+    <section class="mt-14 border-t border-rule pt-10" aria-labelledby="recent-title">
+      <h2 id="recent-title" class="text-xl font-medium">Recent stories</h2>
+      <div>
+        <% recent.forEach((p) => { %><%- include('partials/entry', { p, featured: false }) %><% }) %>
+      </div>
+      <p class="mt-2"><a class="text-ink-soft hover:text-ink hover:underline" href="/@<%= owner.username %>">See all stories by <%= owner.name %></a></p>
+    </section>
+  <% } %>
+</article>
+<%- include('partials/foot') %>

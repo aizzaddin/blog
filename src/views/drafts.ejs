@@ -1,0 +1,19 @@
+<%- include('partials/head', { title }) %>
+<div class="<%= ui.column %>">
+  <h1 class="<%= ui.pageTitle %>">Drafts</h1>
+  <% if (!list.length) { %>
+    <div class="<%= ui.empty %>">
+      <p class="mb-5 max-w-[40ch]">No drafts. Stories you save without publishing show up here.</p>
+      <a class="<%= ui.button %>" href="/write">Start writing</a>
+    </div>
+  <% } %>
+  <ul class="mt-6">
+    <% list.forEach((p) => { %>
+      <li class="border-t border-rule py-5">
+        <a class="text-xl leading-snug font-medium hover:underline" href="/write/<%= p.id %>"><%= p.title %></a>
+        <p class="mt-1.5 <%= ui.meta %>"><span>Edited <%= formatDate(p.updated_at) %></span><span><%= p.reading_min %> min read</span></p>
+      </li>
+    <% }) %>
+  </ul>
+</div>
+<%- include('partials/foot') %>

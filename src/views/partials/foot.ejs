@@ -1,0 +1,10 @@
+  </main>
+  <footer class="mt-16 border-t border-rule px-6 pt-10 pb-12 max-sm:px-4">
+    <div class="text-center text-[0.8125rem] text-ink-soft <%= ui.column %>">
+      <p>© <%= new Date().getFullYear() %> <%= siteName %></p>
+    </div>
+  </footer>
+  <script src="/app.js" defer></script>
+  <% if (typeof scripts !== 'undefined') { scripts.forEach((src) => { %><script src="<%= src %>" defer></script><% }) } %>
+</body>
+</html>
