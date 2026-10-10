@@ -121,3 +121,28 @@ if (themeToggle) {
   themeToggle.hidden = false;
   label();
 }
+
+// Phone menu: the menu button opens the navbar links as a dropdown.
+const menuToggle = document.querySelector('[data-menu-toggle]');
+const menu = document.getElementById('mobile-menu');
+if (menuToggle && menu) {
+  const setOpen = (open, { refocus = false, focusFirst = false } = {}) => {
+    menu.hidden = !open;
+    menuToggle.setAttribute('aria-expanded', String(open));
+    menuToggle.setAttribute('aria-label', open ? 'Close menu' : 'Menu');
+    if (open && focusFirst) menu.querySelector('a, button')?.focus({ preventScroll: true });
+    else if (refocus) menuToggle.focus();
+  };
+  // Opened from the keyboard (detail 0), focus moves into the menu; a tap leaves focus alone.
+  menuToggle.addEventListener('click', (event) => setOpen(menu.hidden, { focusFirst: event.detail === 0 }));
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !menu.hidden) setOpen(false, { refocus: true });
+  });
+  document.addEventListener('click', (event) => {
+    if (!menu.hidden && !menu.contains(event.target) && !menuToggle.contains(event.target)) setOpen(false);
+  });
+  // Close it if the window grows past phone width while open.
+  matchMedia('(min-width: 40rem)').addEventListener('change', (event) => {
+    if (event.matches) setOpen(false);
+  });
+}
