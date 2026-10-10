@@ -2,11 +2,11 @@
 <div class="<%= ui.column %>">
   <header class="border-b border-rule pt-12 pb-6">
     <h1 class="text-[2.5rem] leading-[1.1] font-light tracking-[-0.02em]">Topics</h1>
-    <p class="mt-2 text-ink-soft"><%= topics.length %> <%= topics.length === 1 ? 'topic' : 'topics' %>, most written about first.</p>
+    <% if (topics.length) { %><p class="mt-2 text-ink-soft"><%= topics.length %> <%= topics.length === 1 ? 'topic' : 'topics' %>, most written about first.</p><% } %>
   </header>
 
   <% if (!topics.length) { %>
-    <p class="<%= ui.empty %>">No topics yet. Add topics to a story when you publish it and they’ll show up here.</p>
+    <p class="<%= ui.empty %>">No stories published yet.</p>
   <% } %>
 
   <ul>

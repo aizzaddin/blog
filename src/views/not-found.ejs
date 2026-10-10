@@ -1,7 +1,7 @@
 <%- include('partials/head', { title }) %>
 <div class="pt-24 pb-16 text-lg text-ink-soft <%= ui.column %>">
   <h1 class="text-ink <%= ui.pageTitle %>"><%= title %></h1>
-  <p class="mb-5 max-w-[40ch]"><%= typeof error !== 'undefined' ? 'Try reloading this page in a moment.' : 'The link may be wrong, or the story is no longer published.' %></p>
+  <p class="mb-5 max-w-[40ch]"><%= typeof error !== 'undefined' ? 'Try reloading this page in a moment.' : 'The link may be wrong, or the page may have moved.' %></p>
   <a class="<%= ui.button %>" href="/">Back to home</a>
 </div>
 <%- include('partials/foot') %>

@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Roboto+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
   <meta name="color-scheme" content="light dark">
+  <% if (typeof noindex !== 'undefined' && noindex) { %><meta name="robots" content="noindex, nofollow"><% } %>
   <script>
     // Apply the reader's saved theme before the page paints, so it never flashes.
     try {
@@ -16,7 +17,7 @@
       if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
     } catch {}
   </script>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="<%= asset('style.css') %>">
 </head>
 <body class="bg-paper font-sans text-[15px] leading-normal text-ink antialiased">
   <a class="absolute top-2 -left-[999px] z-10 bg-ink px-2.5 py-1.5 text-paper focus:left-2" href="#content">Skip to content</a>
