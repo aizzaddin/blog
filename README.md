@@ -72,17 +72,26 @@ Or put `DATABASE_URL` in `.env` and run `docker compose up -d --build`.
 
 Uploads accept JPG, PNG, WebP, GIF and AVIF up to 8 MB. SVG isn't accepted.
 
+Every upload is shrunk on the server, so a photo straight from a phone is fine: profile photos to at most 512 px on their longer side, covers and story images to 1600 px. Images are turned upright and saved in the same format, without camera data such as GPS location. Smaller images are never enlarged.
+
+Images uploaded before this existed can be shrunk in place (same file names, so nothing that uses them breaks):
+
+```
+npm run images:shrink              # lists what would change
+npm run images:shrink -- --apply   # shrinks them
+```
+
+With Docker: `docker exec blog npm run images:shrink -- --apply`.
+
 ### Cover images
 
 The cover is shown above the story on the home page, at its own shape and never cropped, up to the text column's width of 680 px. It isn't shown on the story's own page, so put an image in the story too if readers should see it there.
 
-**Recommended: about 1400 px wide, any shape.** Landscape images sit best in the stream. A tall portrait cover pushes the story's opening far down the page.
-
-- **Aim for under 500 KB.** Export as JPG or WebP and compress before uploading.
+Landscape images sit best in the stream. A tall portrait cover pushes the story's opening far down the page.
 
 ### Images inside a story
 
-Images in a story are shown at their own shape, up to the text column's width of 680 px. Use about 1400 px wide so they stay sharp on high-resolution screens. Paste or drag images straight into the editor, or use the image button in the toolbar.
+Images in a story are shown at their own shape, up to the text column's width of 680 px. Paste or drag images straight into the editor, or use the image button in the toolbar.
 
 ## Scripts
 
@@ -93,4 +102,5 @@ Images in a story are shown at their own shape, up to the text column's width of
 | `npm run build` | Build `public/style.css` and `public/editor.js` |
 | `npm run db:migrate` | Create or update the database tables (safe to repeat) |
 | `npm run db:seed` | Add a sample writer and stories to an empty database |
+| `npm run images:shrink` | List uploaded images that can be shrunk; add `-- --apply` to shrink them in place |
 | `npm run set-password` | Set the sign-in email and password; creates the writer account on an empty database |

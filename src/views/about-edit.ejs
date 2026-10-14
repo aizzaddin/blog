@@ -47,7 +47,7 @@
 
     <section class="<%= panel %>" aria-labelledby="photo-title">
       <h2 id="photo-title" class="text-base font-medium">Profile photo</h2>
-      <%- include('partials/image-field', { name: 'avatar_url', value: owner.avatar_url, alt: 'Profile photo preview', shape: 'size-28 rounded-full' }) %>
+      <%- include('partials/image-field', { name: 'avatar_url', value: owner.avatar_url, alt: 'Profile photo preview', shape: 'size-28 rounded-full', purpose: 'avatar' }) %>
     </section>
   </aside>
 </form>
