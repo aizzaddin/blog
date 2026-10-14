@@ -32,7 +32,9 @@ Requirements: Node.js 24 or newer and a PostgreSQL database.
 
    CSS and the editor script rebuild when you save, and the server restarts on code changes. Reload the browser to see changes.
 
-Sign in at `/login`. The writing pages (`/write`, `/drafts`, `/about/edit`) show "Page not found" to anyone who isn't signed in.
+Sign in at `/login`. The writing pages (`/write`, `/drafts`, `/pages`, `/about/edit`) show "Page not found" to anyone who isn't signed in.
+
+Standalone pages such as `/now` or `/uses` are made under **Pages** → **New page**. Each lives at its own address and can be shown in the header menu. The Pages list sets the menu's order, Topics and About included, with its up and down buttons.
 
 ## Deploy with Docker
 

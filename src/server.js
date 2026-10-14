@@ -5,6 +5,7 @@ const express = require('express');
 const multer = require('multer');
 const db = require('./db');
 const posts = require('./posts');
+const pages = require('./pages');
 const auth = require('./auth');
 const { languages } = require('./languages');
 const social = require('./social');
@@ -66,6 +67,7 @@ app.locals.asset = (file) => {
 // Defaults so error pages render even if the session couldn't be loaded.
 app.locals.me = null;
 app.locals.siteOwner = null;
+app.locals.menuPages = [];
 app.locals.currentPath = '';
 
 
@@ -77,11 +79,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// The writer's name and photo for the header. Cleared when the about page is saved.
+// The writer's name and photo, and the pages in the menu, for the header.
+// Cleared when the about page or a page is saved.
 let siteOwner;
+let menuPages;
 app.use(wrap(async (req, res, next) => {
   siteOwner ??= await posts.defaultAuthor();
+  menuPages ??= await pages.menu();
   res.locals.siteOwner = siteOwner || null;
+  res.locals.menuPages = menuPages;
   next();
 }));
 
@@ -296,6 +302,80 @@ app.post(['/write', '/write/:id'], requireWriter, wrap(async (req, res) => {
   }
   const saved = await posts.save({ ...input, id, authorId: req.author.id });
   res.redirect(saved.status === 'published' ? `/p/${saved.slug}` : '/drafts');
+}));
+
+// Pages -----------------------------------------------------------------------
+
+app.get('/pages', requireWriter, wrap(async (req, res) => {
+  res.render('pages', { title: 'Pages', list: await pages.all(), moved: String(req.query.moved || '') });
+}));
+
+const renderPageEditor = (res, { page, error = null, status = 200 }) =>
+  res.status(status).render('page-edit', { title: page.id ? 'Edit page' : 'New page', page, error, languages });
+
+app.get('/pages/new', requireWriter, (req, res) => {
+  renderPageEditor(res, { page: { title: '', slug: '', body_html: '', in_menu: true } });
+});
+
+// Topics and About can only be moved, so editing or deleting them is "not found" unless `movable`.
+async function findPage(req, res, { movable = false } = {}) {
+  const page = await pages.byId(parseInt(req.params.id, 10) || 0);
+  if (!page || (page.builtin && !movable)) {
+    res.status(404).render('not-found', { title: 'Page not found' });
+    return null;
+  }
+  return page;
+}
+
+app.get('/pages/:id/edit', requireWriter, wrap(async (req, res) => {
+  const page = await findPage(req, res);
+  if (page) renderPageEditor(res, { page });
+}));
+
+app.post(['/pages/new', '/pages/:id/edit'], requireWriter, wrap(async (req, res) => {
+  const existing = req.params.id ? await findPage(req, res) : null;
+  if (req.params.id && !existing) return;
+  const title = String(req.body.title || '').trim().slice(0, 120);
+  const page = {
+    id: existing ? existing.id : null,
+    title,
+    slug: pages.pageSlug(req.body.slug, title),
+    body_html: String(req.body.body || ''),
+    in_menu: req.body.in_menu === 'on',
+  };
+  const fail = (error) => renderPageEditor(res, { page, error, status: 422 });
+  if (!title) return fail('Add a title before saving.');
+  if (!page.slug) return fail('Add an address for the page, using letters and numbers.');
+  if (pages.isReserved(page.slug)) return fail(`/${page.slug} is already used by the blog. Pick another address.`);
+  const saved = await pages.save({ id: page.id, title, slug: page.slug, body: page.body_html, inMenu: page.in_menu });
+  if (!saved) return fail(`Another page already uses /${page.slug}. Pick another address.`);
+  menuPages = null;
+  res.redirect(`/${saved.slug}`);
+}));
+
+// Up and down buttons on the pages list. Back on the list, the same button keeps focus.
+app.post('/pages/:id/move', requireWriter, wrap(async (req, res) => {
+  const page = await findPage(req, res, { movable: true });
+  if (!page) return;
+  const direction = req.body.direction === 'up' ? 'up' : 'down';
+  await pages.move(page.id, direction === 'up' ? -1 : 1);
+  menuPages = null;
+  res.redirect(`/pages?moved=${page.id}-${direction}#page-${page.id}`);
+}));
+
+app.post('/pages/:id/delete', requireWriter, wrap(async (req, res) => {
+  const page = await findPage(req, res);
+  if (!page) return;
+  await pages.remove(page.id);
+  menuPages = null;
+  res.redirect('/pages');
+}));
+
+// A page lives at the top level (/now, /uses), so this route comes after every other one.
+app.get('/:slug', wrap(async (req, res, next) => {
+  const page = await pages.bySlug(req.params.slug);
+  if (!page) return next();
+  res.render('page', { title: page.title, page, html: renderBody(page.body_html) });
 }));
 
 app.use((req, res) => res.status(404).render('not-found', { title: 'Page not found' }));

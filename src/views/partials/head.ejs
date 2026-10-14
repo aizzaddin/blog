@@ -17,8 +17,8 @@
   <a class="absolute top-2 -left-[999px] z-10 bg-ink px-2.5 py-1.5 text-paper focus:left-2" href="#content">Skip to content</a>
   <%
     const isCurrent = (href) => currentPath === href || currentPath.startsWith(href + '/');
-    const links = [{ href: '/topics', label: 'Topics' }, { href: '/about', label: 'About' }]
-      .concat(me ? [{ href: '/drafts', label: 'Drafts' }, { href: '/write', label: 'Write' }] : []);
+    const links = menuPages.map((p) => ({ href: `/${p.slug}`, label: p.title }))
+      .concat(me ? [{ href: '/drafts', label: 'Drafts' }, { href: '/pages', label: 'Pages' }, { href: '/write', label: 'Write' }] : []);
     const isHome = currentPath === '/';
   %>
   <header id="top" class="border-b border-rule px-6 text-center max-sm:px-4 <%= isHome ? 'pt-12 pb-10 max-sm:pt-9 max-sm:pb-8' : 'pt-8 pb-6 max-sm:pt-6 max-sm:pb-5' %>">

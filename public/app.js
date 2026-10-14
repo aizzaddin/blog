@@ -74,7 +74,8 @@ document.querySelectorAll('.editor-title, .editor-subtitle').forEach((el) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
     const next = el.classList.contains('editor-title') ? '#subtitle' : '#body';
-    document.querySelector(next).focus();
+    // Pages have no subtitle: go straight to the editor.
+    (document.querySelector(next) || document.querySelector('#editor .ProseMirror'))?.focus();
   });
 });
 
@@ -89,5 +90,12 @@ document.querySelectorAll('.code-copy').forEach((button) => {
       button.textContent = 'Select and copy';
     }
     setTimeout(() => { button.textContent = 'Copy'; }, 1600);
+  });
+});
+
+// Forms that can't be undone (deleting a page) ask first.
+document.querySelectorAll('form[data-confirm]').forEach((form) => {
+  form.addEventListener('submit', (event) => {
+    if (!confirm(form.dataset.confirm)) event.preventDefault();
   });
 });

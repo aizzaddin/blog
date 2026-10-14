@@ -1,0 +1,11 @@
+<%- include('partials/head', { title }) %>
+<article class="<%= ui.column %>">
+  <header class="pt-14 pb-2 max-sm:pt-9">
+    <h1 class="<%= ui.storyTitle %>"><%= page.title %></h1>
+  </header>
+  <div class="prose"><%- html %></div>
+  <% if (me) { %>
+    <p class="mt-10"><a class="<%= ui.buttonQuiet %>" href="/pages/<%= page.id %>/edit">Edit this page</a></p>
+  <% } %>
+</article>
+<%- include('partials/foot') %>
