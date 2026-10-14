@@ -1,0 +1,4 @@
+<li class="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 border-t border-rule py-4 first:border-t-0 max-sm:grid-cols-1">
+  <a class="text-lg leading-snug font-semibold tracking-[-0.01em] decoration-1 underline-offset-4 hover:underline" href="/p/<%= p.slug %>"><%= p.title %></a>
+  <time class="text-sm text-ink-soft tabular-nums max-sm:mt-1" datetime="<%= new Date(p.published_at).toISOString() %>"><%= formatDate(p.published_at) %></time>
+</li>

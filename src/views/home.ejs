@@ -1,20 +1,11 @@
 <%- include('partials/head', { title }) %>
-<div class="<%= ui.column %>">
-  <% if (heading) { %>
-    <header class="border-b border-rule pt-12 pb-6">
-      <h1 class="text-[2.5rem] leading-[1.1] font-light tracking-[-0.02em]"><%= heading %></h1>
-      <p class="mt-2 text-ink-soft"><%= list.length %> <%= list.length === 1 ? 'story' : 'stories' %></p>
-    </header>
-  <% } %>
-
+<div class="pt-14 max-sm:pt-10 <%= ui.column %>">
+  <h1 class="sr-only">Stories by <%= siteOwner ? siteOwner.name : siteName %></h1>
   <% if (!list.length) { %>
     <p class="<%= ui.empty %>">No stories published yet.</p>
   <% } %>
-
-  <div>
-    <% list.forEach((p, i) => { %>
-      <%- include('partials/entry', { p, featured: i === 0 && !heading }) %>
-    <% }) %>
-  </div>
+  <% list.forEach((p) => { %>
+    <%- include('partials/entry', { p }) %>
+  <% }) %>
 </div>
 <%- include('partials/foot') %>

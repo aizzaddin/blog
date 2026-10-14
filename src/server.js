@@ -7,8 +7,9 @@ const db = require('./db');
 const posts = require('./posts');
 const auth = require('./auth');
 const { languages } = require('./languages');
+const social = require('./social');
 const {
-  renderBody, preview, excerpt, coverImage, isBlank, formatDate, parseTags,
+  renderBody, streamBody, excerpt, isBlank, formatDate, parseTags,
 } = require('./content');
 
 const app = express();
@@ -41,11 +42,11 @@ app.use(express.json());
 
 app.locals.ui = require('./ui');
 app.locals.excerpt = excerpt;
-app.locals.preview = preview;
-app.locals.coverImage = coverImage;
+app.locals.streamBody = streamBody;
 app.locals.formatDate = formatDate;
+app.locals.socialLinks = social.socialLinks;
 app.locals.initials = (name = '') => name.split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
-app.locals.siteName = process.env.SITE_NAME || 'wildanaizzaddin';
+app.locals.siteName = process.env.SITE_NAME || 'wildanaizzaddin.';
 
 // Versioned URLs for CSS and JS (/style.css?v=…), so browsers fetch the new file after every change
 // instead of reusing a cached copy. Versions are cached in production, where files don't change.
@@ -64,6 +65,7 @@ app.locals.asset = (file) => {
 };
 // Defaults so error pages render even if the session couldn't be loaded.
 app.locals.me = null;
+app.locals.siteOwner = null;
 app.locals.currentPath = '';
 
 
@@ -74,6 +76,14 @@ app.use((req, res, next) => {
   res.locals.currentPath = req.path;
   next();
 });
+
+// The writer's name and photo for the header. Cleared when the about page is saved.
+let siteOwner;
+app.use(wrap(async (req, res, next) => {
+  siteOwner ??= await posts.defaultAuthor();
+  res.locals.siteOwner = siteOwner || null;
+  next();
+}));
 
 const requireWriter = auth.requireAuth;
 
@@ -93,14 +103,14 @@ const upload = multer({
 });
 
 app.get('/', wrap(async (req, res) => {
-  res.render('home', { title: null, heading: null, list: await posts.feed() });
+  res.render('home', { title: null, list: await posts.feed() });
 }));
 
 app.get('/tag/:slug', wrap(async (req, res) => {
   const tags = await posts.popularTags(100);
   const tag = tags.find((t) => t.slug === req.params.slug);
   if (!tag) return res.status(404).render('not-found', { title: 'Topic not found' });
-  res.render('home', { title: tag.name, heading: tag.name, list: await posts.feed({ tag: tag.slug, limit: 50 }) });
+  res.render('tag', { title: tag.name, tag, list: await posts.feed({ tag: tag.slug, limit: 50 }) });
 }));
 
 app.get('/topics', wrap(async (req, res) => {
@@ -118,7 +128,7 @@ app.get('/about', wrap(async (req, res) => {
 app.get('/about/edit', requireWriter, wrap(async (req, res) => {
   const owner = await posts.defaultAuthor();
   if (owner.id !== req.author.id) return res.status(403).render('not-found', { title: 'Only the blog owner can edit this page' });
-  res.render('about-edit', { title: 'Edit about page', owner, error: null, languages });
+  res.render('about-edit', { title: 'Edit about page', owner, error: null, languages, networks: social.networks });
 }));
 
 app.post('/about/edit', requireWriter, wrap(async (req, res) => {
@@ -129,14 +139,25 @@ app.post('/about/edit', requireWriter, wrap(async (req, res) => {
     bio: String(req.body.bio || '').trim().slice(0, 200),
     avatarUrl: cleanImage(req.body.avatar_url),
     aboutHtml: String(req.body.body || ''),
+    social: {},
   };
-  if (!input.name) {
+  const badHandles = [];
+  for (const network of social.networks) {
+    const handle = social.cleanHandle(network, req.body[`social_${network.key}`]);
+    if (handle === null) badHandles.push(network.label);
+    else if (handle) input.social[network.key] = handle;
+  }
+  const error = !input.name ? 'Add your name before saving.'
+    : badHandles.length ? `Check your ${badHandles.join(' and ')} username. Use the name only, like the part after @.`
+    : null;
+  if (error) {
     return res.status(422).render('about-edit', {
-      title: 'Edit about page', languages, error: 'Add your name before saving.',
+      title: 'Edit about page', languages, networks: social.networks, error,
       owner: { ...owner, ...input, avatar_url: input.avatarUrl, about_html: input.aboutHtml },
     });
   }
   await posts.updateAbout(owner.id, input);
+  siteOwner = null;
   res.redirect('/about');
 }));
 

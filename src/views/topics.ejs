@@ -1,7 +1,7 @@
 <%- include('partials/head', { title }) %>
 <div class="<%= ui.column %>">
   <header class="border-b border-rule pt-12 pb-6">
-    <h1 class="text-[2.5rem] leading-[1.1] font-light tracking-[-0.02em]">Topics</h1>
+    <h1 class="<%= ui.storyTitle %>">Topics</h1>
     <% if (topics.length) { %><p class="mt-2 text-ink-soft"><%= topics.length %> <%= topics.length === 1 ? 'topic' : 'topics' %>, most written about first.</p><% } %>
   </header>
 
@@ -12,7 +12,7 @@
   <ul>
     <% topics.forEach((t) => { %>
       <li class="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 border-b border-rule py-7 last:border-b-0">
-        <h2 class="text-[1.75rem] leading-tight font-light tracking-[-0.015em]">
+        <h2 class="text-2xl leading-tight font-semibold tracking-[-0.02em]">
           <a class="decoration-1 underline-offset-4 hover:underline" href="/tag/<%= t.slug %>"><%= t.name %></a>
         </h2>
         <p class="text-sm text-ink-soft tabular-nums"><%= t.total %> <%= t.total === 1 ? 'story' : 'stories' %></p>

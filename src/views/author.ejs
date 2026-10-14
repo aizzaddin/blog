@@ -1,13 +1,15 @@
 <%- include('partials/head', { title }) %>
 <div class="<%= ui.column %>">
-  <header class="border-b border-rule pt-14 pb-6">
+  <header class="pt-14 pb-6">
     <%- include('partials/byline', { p: { avatar_url: author.avatar_url, author_name: author.name }, size: 'size-[72px] text-[1.375rem]' }) %>
-    <h1 class="mt-5 mb-2 text-[2.5rem] leading-[1.1] font-light tracking-[-0.02em]"><%= author.name %></h1>
+    <h1 class="mt-5 mb-2 <%= ui.storyTitle %>"><%= author.name %></h1>
     <% if (author.bio) { %><p class="max-w-[52ch] text-lg text-ink-soft"><%= author.bio %></p><% } %>
   </header>
   <% if (!list.length) { %><p class="<%= ui.empty %>">This writer hasn’t published any stories yet.</p><% } %>
-  <div>
-    <% list.forEach((p) => { %><%- include('partials/entry', { p, featured: false }) %><% }) %>
-  </div>
+  <% if (list.length) { %>
+    <ul class="border-t border-rule">
+      <% list.forEach((p) => { %><%- include('partials/row', { p }) %><% }) %>
+    </ul>
+  <% } %>
 </div>
 <%- include('partials/foot') %>

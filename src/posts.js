@@ -2,7 +2,7 @@ const db = require('./db');
 const { postSlug, readingMinutes, sanitizeBody } = require('./content');
 
 // Public profile fields only; sign-in details (email, password hash) never leave auth.js.
-const AUTHOR_FIELDS = 'id, username, name, bio, avatar_url, about_html, created_at';
+const AUTHOR_FIELDS = 'id, username, name, bio, avatar_url, about_html, social, created_at';
 
 const POST_FIELDS = `
   p.id, p.author_id, p.title, p.subtitle, p.slug, p.body_html, p.cover_url, p.status,
@@ -87,10 +87,10 @@ async function topics() {
   return rows;
 }
 
-async function updateAbout(authorId, { name, bio, avatarUrl, aboutHtml }) {
+async function updateAbout(authorId, { name, bio, avatarUrl, aboutHtml, social }) {
   await db.query(
-    `UPDATE authors SET name = $2, bio = $3, avatar_url = $4, about_html = $5 WHERE id = $1`,
-    [authorId, name, bio, avatarUrl, sanitizeBody(aboutHtml)],
+    `UPDATE authors SET name = $2, bio = $3, avatar_url = $4, about_html = $5, social = $6 WHERE id = $1`,
+    [authorId, name, bio, avatarUrl, sanitizeBody(aboutHtml), social],
   );
 }
 
