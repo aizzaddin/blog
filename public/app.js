@@ -13,48 +13,39 @@ if (progress && story) {
   update();
 }
 
-// Claps: click repeatedly; sent in one request after a short pause.
+// Claps: one per reader. Clicking again takes the clap back. The count changes at once and
+// settles on the server's total; if the request fails, it goes back to how it was.
 const clap = document.querySelector('.clap');
 if (clap) {
   const button = clap.querySelector('.clap-button');
   const count = clap.querySelector('.clap-count');
-  const burst = clap.querySelector('.clap-burst');
-  const key = `clapped:${clap.dataset.slug}`;
-  let pending = 0;
-  let session = 0;
-  let timer;
+  let busy = false;
 
-  try { if (localStorage.getItem(key)) clap.dataset.clapped = ''; } catch {}
+  const show = (clapped, total) => {
+    button.setAttribute('aria-pressed', String(clapped));
+    button.title = clapped ? 'Take back your clap' : 'Clap for this story';
+    count.textContent = total;
+  };
 
-  const send = async () => {
-    const amount = pending;
-    pending = 0;
+  button.addEventListener('click', async () => {
+    if (busy) return;
+    busy = true;
+    const was = button.getAttribute('aria-pressed') === 'true';
+    const before = Number(count.textContent);
+    show(!was, before + (was ? -1 : 1));
     try {
       const res = await fetch(`/p/${clap.dataset.slug}/clap`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ count: amount }),
+        body: JSON.stringify({ clapped: !was }),
       });
       if (!res.ok) throw new Error(res.statusText);
-      count.textContent = (await res.json()).claps;
+      const json = await res.json();
+      show(json.clapped, json.claps);
     } catch {
-      count.textContent = Number(count.textContent) - amount;
+      show(was, before);
     }
-  };
-
-  button.addEventListener('click', () => {
-    if (session >= 50) return;
-    session += 1;
-    pending += 1;
-    count.textContent = Number(count.textContent) + 1;
-    clap.dataset.clapped = '';
-    burst.textContent = `+${session}`;
-    burst.classList.remove('animate-burst');
-    void burst.offsetWidth;
-    burst.classList.add('animate-burst');
-    try { localStorage.setItem(key, '1'); } catch {}
-    clearTimeout(timer);
-    timer = setTimeout(send, 600);
+    busy = false;
   });
 }
 

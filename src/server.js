@@ -211,9 +211,10 @@ app.get('/p/:slug', wrap(async (req, res) => {
   if (!post || post.status !== 'published') {
     return res.status(404).render('not-found', { title: 'Story not found' });
   }
-  const [replies, more] = await Promise.all([
+  const [replies, more, clapped] = await Promise.all([
     posts.responses(post.id),
     posts.feed({ username: post.username, limit: 4 }),
+    posts.hasClapped(post.id, auth.readerId(req, res)),
   ]);
   res.render('post', {
     title: post.title,
@@ -221,13 +222,16 @@ app.get('/p/:slug', wrap(async (req, res) => {
     post,
     html: renderBody(post.body_html),
     replies,
+    clapped,
     more: more.filter((p) => p.id !== post.id).slice(0, 3),
   });
 }));
 
+// One clap per reader per story, remembered by an anonymous cookie. { clapped: false } takes it back.
 app.post('/p/:slug/clap', wrap(async (req, res) => {
-  const count = Math.min(Math.max(parseInt(req.body.count, 10) || 1, 1), 50);
-  const result = await posts.clap(req.params.slug, count);
+  if (!auth.sameOrigin(req)) return res.status(403).json({ error: 'This request came from another site and was blocked.' });
+  const clapped = req.body.clapped === true || req.body.clapped === 'true';
+  const result = await posts.setClap(req.params.slug, auth.readerId(req, res, { create: clapped }), clapped);
   if (!result) return res.status(404).json({ error: 'Story not found.' });
   res.json(result);
 }));

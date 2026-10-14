@@ -83,6 +83,22 @@ async function loadSession(req, res, next) {
   next();
 }
 
+// An anonymous id for a reader, so each can clap a story once. The cookie is only set when they first
+// clap (create: true); readers who just read get none. Returns a hash of the id, or null without one.
+const READER_COOKIE = 'reader';
+const READER_DAYS = 730;
+
+function readerId(req, res, { create = false } = {}) {
+  let id = readCookie(req, READER_COOKIE);
+  if (!/^[\w-]{22}$/.test(id || '')) {
+    if (!create) return null;
+    id = crypto.randomBytes(16).toString('base64url');
+    const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    res.append('Set-Cookie', `${READER_COOKIE}=${id}; Path=/p; HttpOnly; SameSite=Lax; Max-Age=${READER_DAYS * 24 * 60 * 60}${secure}`);
+  }
+  return tokenHash(id);
+}
+
 // Rejects form posts sent from other sites.
 function sameOrigin(req) {
   const origin = req.headers.origin || req.headers.referer;
@@ -128,6 +144,6 @@ const clearFailures = (ip) => attempts.delete(ip);
 const safeNext = (next) => (/^\/(?!\/)[\w\-./?=&%@]*$/.test(next || '') ? next : '/');
 
 module.exports = {
-  hashPassword, signIn, startSession, endSession, loadSession, requireAuth, sameOrigin,
+  hashPassword, signIn, startSession, endSession, loadSession, requireAuth, sameOrigin, readerId,
   loginBlocked, recordFailure, clearFailures, safeNext,
 };

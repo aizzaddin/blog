@@ -24,14 +24,6 @@
   --color-code-rule: #3d3d3d;
 
   --container-measure: 680px;
-
-  --animate-burst: burst 700ms ease-out;
-  @keyframes burst {
-    0% { opacity: 0; transform: translateY(6px); }
-    25% { opacity: 1; transform: translateY(-4px); }
-    75% { opacity: 1; transform: translateY(-8px); }
-    100% { opacity: 0; transform: translateY(-12px); }
-  }
 }
 
 @layer base {

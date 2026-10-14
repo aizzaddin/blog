@@ -96,3 +96,12 @@ ALTER TABLE pages ADD COLUMN IF NOT EXISTS position INT NOT NULL DEFAULT 0;
 ALTER TABLE pages ADD COLUMN IF NOT EXISTS builtin BOOLEAN NOT NULL DEFAULT false;
 INSERT INTO pages (slug, title, builtin, position) VALUES ('topics', 'Topics', true, -2), ('about', 'About', true, -1)
   ON CONFLICT (slug) DO NOTHING;
+
+-- One clap per reader per story. `reader` is a hash of the id in an anonymous cookie set on the first clap.
+-- posts.claps stays the story's total, so claps from before this table are kept.
+CREATE TABLE IF NOT EXISTS claps (
+  post_id     INT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  reader      TEXT NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (post_id, reader)
+);
