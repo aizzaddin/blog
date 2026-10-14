@@ -63,6 +63,9 @@ Or put `DATABASE_URL` in `.env` and run `docker compose up -d --build`.
 | `PORT` | no | Port to listen on, default `3000` |
 | `NODE_ENV` | no | `production` in the Docker image |
 | `TRUST_PROXY` | no | Number of proxies in front of the app |
+| `TURNSTILE_SITE_KEY` | no | Cloudflare Turnstile site key for the response and sign-in forms. Needs the secret key too |
+| `TURNSTILE_SECRET_KEY` | no | Cloudflare Turnstile secret key. With both keys unset, the forms aren't checked |
+| `TURNSTILE_HOSTNAMES` | no | Domains the forms are served from, comma-separated, e.g. `example.com,www.example.com`. Default: the address the form was opened on |
 | `SITE_NAME` | no | Name in the header, default `wildanaizzaddin.`. The home page tab shows the writer's name instead |
 
 ## Image guidelines

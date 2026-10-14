@@ -15,6 +15,7 @@
       <label class="font-medium" for="password">Password</label>
       <input class="<%= ui.input %>" id="password" name="password" type="password" autocomplete="current-password" required <%= email ? 'autofocus' : '' %>>
     </div>
+    <%- include('partials/turnstile', { action: 'login' }) %>
     <button class="mt-2 <%= ui.button %>" type="submit">Sign in</button>
   </form>
 </div>

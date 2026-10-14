@@ -28,11 +28,13 @@
 
   <section class="mt-4 py-10" id="responses" aria-labelledby="responses-title">
     <h2 id="responses-title" class="mb-5 text-xl font-semibold">Responses <span class="font-normal text-ink-soft"><%= replies.length %></span></h2>
-    <form class="mb-6 grid gap-2.5" method="post" action="/p/<%= post.slug %>/responses">
+    <form class="mb-6 grid gap-2.5" method="post" action="/p/<%= post.slug %>/responses#responses">
+      <% if (draft) { %><p class="border-l-[3px] border-ink bg-wash px-4 py-3" role="alert"><%= draft.error %></p><% } %>
       <label class="sr-only" for="r-name">Name</label>
-      <input class="<%= ui.input %>" id="r-name" name="name" maxlength="60" required placeholder="Your name" autocomplete="name">
+      <input class="<%= ui.input %>" id="r-name" name="name" maxlength="60" required placeholder="Your name" autocomplete="name" value="<%= draft ? draft.name : '' %>">
       <label class="sr-only" for="r-body">Response</label>
-      <textarea class="<%= ui.input %>" id="r-body" name="body" rows="3" maxlength="2000" required placeholder="What are your thoughts?"></textarea>
+      <textarea class="<%= ui.input %>" id="r-body" name="body" rows="3" maxlength="2000" required placeholder="What are your thoughts?"><%= draft ? draft.body : '' %></textarea>
+      <%- include('partials/turnstile', { action: 'response' }) %>
       <button class="justify-self-end <%= ui.button %>" type="submit">Post response</button>
     </form>
     <% if (!replies.length) { %><p class="<%= ui.quiet %>">No responses yet. Start the conversation.</p><% } %>

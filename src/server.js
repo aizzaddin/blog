@@ -9,6 +9,7 @@ const pages = require('./pages');
 const auth = require('./auth');
 const { languages } = require('./languages');
 const social = require('./social');
+const turnstile = require('./turnstile');
 const {
   renderBody, streamBody, excerpt, isBlank, formatDate, parseTags,
 } = require('./content');
@@ -46,6 +47,7 @@ app.locals.excerpt = excerpt;
 app.locals.streamBody = streamBody;
 app.locals.formatDate = formatDate;
 app.locals.socialLinks = social.socialLinks;
+app.locals.turnstileSiteKey = turnstile.enabled ? turnstile.siteKey : null;
 app.locals.initials = (name = '') => name.split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 app.locals.siteName = process.env.SITE_NAME || 'wildanaizzaddin.';
 
@@ -182,6 +184,11 @@ app.post('/login', wrap(async (req, res) => {
   if (!auth.sameOrigin(req)) return fail(403, 'This sign-in came from another site and was blocked.');
   const wait = auth.loginBlocked(req.ip);
   if (wait) return fail(429, `Too many attempts. Try again in ${wait} minute${wait === 1 ? '' : 's'}.`);
+  // Checked before the password, so bots never reach it. A failed check isn't counted as a wrong password.
+  const token = String(req.body['cf-turnstile-response'] || '');
+  if (!await turnstile.verify(token, { ip: req.ip, action: 'login', host: req.hostname })) {
+    return fail(400, 'We couldn’t confirm you’re not a bot. Wait for the check to finish, then sign in again.');
+  }
 
   const authorId = await auth.signIn(email, req.body.password);
   if (!authorId) {
@@ -206,25 +213,31 @@ app.get('/@:username', wrap(async (req, res) => {
   res.render('author', { title: author.name, author, list });
 }));
 
-app.get('/p/:slug', wrap(async (req, res) => {
-  const post = await posts.bySlug(req.params.slug);
-  if (!post || post.status !== 'published') {
-    return res.status(404).render('not-found', { title: 'Story not found' });
-  }
+// The story page. `draft` carries a response that couldn't be posted, so the reader doesn't lose it.
+async function renderPost(req, res, post, { draft = null, status = 200 } = {}) {
   const [replies, more, clapped] = await Promise.all([
     posts.responses(post.id),
     posts.feed({ username: post.username, limit: 4 }),
     posts.hasClapped(post.id, auth.readerId(req, res)),
   ]);
-  res.render('post', {
+  res.status(status).render('post', {
     title: post.title,
     description: excerpt(post),
     post,
     html: renderBody(post.body_html),
     replies,
     clapped,
+    draft,
     more: more.filter((p) => p.id !== post.id).slice(0, 3),
   });
+}
+
+app.get('/p/:slug', wrap(async (req, res) => {
+  const post = await posts.bySlug(req.params.slug);
+  if (!post || post.status !== 'published') {
+    return res.status(404).render('not-found', { title: 'Story not found' });
+  }
+  await renderPost(req, res, post);
 }));
 
 // One clap per reader per story, remembered by an anonymous cookie. { clapped: false } takes it back.
@@ -241,7 +254,13 @@ app.post('/p/:slug/responses', wrap(async (req, res) => {
   if (!post || post.status !== 'published') return res.status(404).render('not-found', { title: 'Story not found' });
   const name = String(req.body.name || '').trim().slice(0, 60);
   const body = String(req.body.body || '').trim().slice(0, 2000);
-  if (name && body) await posts.addResponse(post.id, name, body);
+  const fail = (error) => renderPost(req, res, post, { draft: { name, body, error }, status: 422 });
+  if (!name || !body) return fail('Add your name and a response before posting.');
+  const token = String(req.body['cf-turnstile-response'] || '');
+  if (!await turnstile.verify(token, { ip: req.ip, action: 'response', host: req.hostname })) {
+    return fail('We couldn’t confirm you’re not a bot. Wait for the check to finish, then post again.');
+  }
+  await posts.addResponse(post.id, name, body);
   res.redirect(`/p/${post.slug}#responses`);
 }));
 
