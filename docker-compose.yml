@@ -1,5 +1,5 @@
 # Runs the blog in a container against your existing Postgres database.
-#   1. Put DATABASE_URL (and optionally TRUST_PROXY, SITE_NAME) in a .env file next to this one.
+#   1. Put DATABASE_URL (and optionally TRUST_PROXY, SITE_NAME, TURNSTILE_*) in a .env file next to this one.
 #      Inside a container "localhost" is the container itself: for a database on this machine use
 #      host.docker.internal instead, e.g. postgresql://user:pass@host.docker.internal:5432/blog
 #   2. docker compose up -d --build
@@ -15,6 +15,9 @@ services:
       # How many proxies (e.g. Nginx, Caddy, a load balancer) sit in front of the app.
       TRUST_PROXY: ${TRUST_PROXY:-1}
       SITE_NAME: ${SITE_NAME:-wildanaizzaddin.}
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      TURNSTILE_HOSTNAMES: ${TURNSTILE_HOSTNAMES:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

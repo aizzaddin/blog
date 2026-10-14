@@ -153,12 +153,47 @@ async function save({ id, authorId, title, subtitle, body, coverUrl = null, tags
   }
 }
 
-async function clap(slug, count) {
-  const { rows } = await db.query(
-    `UPDATE posts SET claps = claps + $2 WHERE slug = $1 AND status = 'published' RETURNING claps`,
-    [slug, count],
-  );
-  return rows[0];
+// Adds or takes back one reader's clap. Returns the story's total, or nothing if the story isn't published.
+// Without a reader (no cookie) nothing changes, so asking to take back a clap just reports the total.
+async function setClap(slug, reader, clapped) {
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows: [post] } = await client.query(
+      `SELECT id, claps FROM posts WHERE slug = $1 AND status = 'published' FOR UPDATE`,
+      [slug],
+    );
+    if (!post) {
+      await client.query('ROLLBACK');
+      return null;
+    }
+    let change = 0;
+    if (reader && clapped) {
+      const { rowCount } = await client.query(
+        `INSERT INTO claps (post_id, reader) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [post.id, reader],
+      );
+      change = rowCount;
+    } else if (reader) {
+      const { rowCount } = await client.query(`DELETE FROM claps WHERE post_id = $1 AND reader = $2`, [post.id, reader]);
+      change = -rowCount;
+    }
+    const { rows: [row] } = change
+      ? await client.query(`UPDATE posts SET claps = GREATEST(claps + $2, 0) WHERE id = $1 RETURNING claps`, [post.id, change])
+      : { rows: [post] };
+    await client.query('COMMIT');
+    return { claps: row.claps, clapped: Boolean(reader && clapped) };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function hasClapped(postId, reader) {
+  if (!reader) return false;
+  const { rowCount } = await db.query(`SELECT 1 FROM claps WHERE post_id = $1 AND reader = $2`, [postId, reader]);
+  return rowCount > 0;
 }
 
 async function responses(postId) {
@@ -174,5 +209,6 @@ async function addResponse(postId, name, body) {
 }
 
 module.exports = {
-  feed, bySlug, byId, drafts, popularTags, topics, updateAbout, author, defaultAuthor, save, clap, responses, addResponse,
+  feed, bySlug, byId, drafts, popularTags, topics, updateAbout, author, defaultAuthor, save, setClap, hasClapped,
+  responses, addResponse,
 };

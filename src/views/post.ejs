@@ -17,23 +17,24 @@
       <p class="mb-8 text-ink-soft">Filed under <% post.tags.forEach((t, i) => { %><%= i ? ', ' : '' %><a class="<%= ui.tag %>" href="/tag/<%= t.slug %>"><%= t.name %></a><% }) %></p>
     <% } %>
 
-    <div class="clap group relative flex items-center gap-2.5 border-y border-rule py-4" data-slug="<%= post.slug %>">
-      <button type="button" class="clap-button grid size-[52px] cursor-pointer place-items-center rounded-full border border-rule bg-surface text-ink-soft transition hover:border-ink hover:text-ink active:scale-92 group-data-clapped:border-ink group-data-clapped:bg-ink group-data-clapped:text-paper group-data-clapped:hover:text-paper" aria-label="Clap for this story">
+    <div class="clap flex items-center gap-2.5 border-y border-rule py-4" data-slug="<%= post.slug %>">
+      <button type="button" class="clap-button grid size-[52px] cursor-pointer place-items-center rounded-full border border-rule bg-surface text-ink-soft transition hover:border-ink hover:text-ink active:scale-92 aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-paper aria-pressed:hover:text-paper" aria-label="Clap for this story" aria-pressed="<%= clapped %>" title="<%= clapped ? 'Take back your clap' : 'Clap for this story' %>">
         <%- include('partials/clap-icon', { size: 26 }) %>
       </button>
       <span class="clap-count text-[0.9375rem] text-ink-soft tabular-nums" aria-live="polite"><%= post.claps %></span>
-      <span class="clap-burst pointer-events-none absolute -top-1.5 left-2 min-w-9 rounded-full bg-ink px-2 py-0.5 text-center text-xs text-paper opacity-0" aria-hidden="true"></span>
     </div>
 
   </footer>
 
   <section class="mt-4 py-10" id="responses" aria-labelledby="responses-title">
     <h2 id="responses-title" class="mb-5 text-xl font-semibold">Responses <span class="font-normal text-ink-soft"><%= replies.length %></span></h2>
-    <form class="mb-6 grid gap-2.5" method="post" action="/p/<%= post.slug %>/responses">
+    <form class="mb-6 grid gap-2.5" method="post" action="/p/<%= post.slug %>/responses#responses">
+      <% if (draft) { %><p class="border-l-[3px] border-ink bg-wash px-4 py-3" role="alert"><%= draft.error %></p><% } %>
       <label class="sr-only" for="r-name">Name</label>
-      <input class="<%= ui.input %>" id="r-name" name="name" maxlength="60" required placeholder="Your name" autocomplete="name">
+      <input class="<%= ui.input %>" id="r-name" name="name" maxlength="60" required placeholder="Your name" autocomplete="name" value="<%= draft ? draft.name : '' %>">
       <label class="sr-only" for="r-body">Response</label>
-      <textarea class="<%= ui.input %>" id="r-body" name="body" rows="3" maxlength="2000" required placeholder="What are your thoughts?"></textarea>
+      <textarea class="<%= ui.input %>" id="r-body" name="body" rows="3" maxlength="2000" required placeholder="What are your thoughts?"><%= draft ? draft.body : '' %></textarea>
+      <%- include('partials/turnstile', { action: 'response' }) %>
       <button class="justify-self-end <%= ui.button %>" type="submit">Post response</button>
     </form>
     <% if (!replies.length) { %><p class="<%= ui.quiet %>">No responses yet. Start the conversation.</p><% } %>

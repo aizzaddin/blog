@@ -78,3 +78,30 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 CREATE INDEX IF NOT EXISTS sessions_author_idx ON sessions (author_id);
+
+-- Standalone pages such as /now or /uses, written in the same editor as stories.
+CREATE TABLE IF NOT EXISTS pages (
+  id          SERIAL PRIMARY KEY,
+  slug        TEXT NOT NULL UNIQUE CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
+  title       TEXT NOT NULL,
+  body_html   TEXT NOT NULL DEFAULT '',
+  in_menu     BOOLEAN NOT NULL DEFAULT true,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- The writer's own order for the list and the menu.
+ALTER TABLE pages ADD COLUMN IF NOT EXISTS position INT NOT NULL DEFAULT 0;
+-- Topics and About sit in the same list so the writer can order the whole menu.
+-- They keep their own routes and can't be edited, hidden or deleted from Pages.
+ALTER TABLE pages ADD COLUMN IF NOT EXISTS builtin BOOLEAN NOT NULL DEFAULT false;
+INSERT INTO pages (slug, title, builtin, position) VALUES ('topics', 'Topics', true, -2), ('about', 'About', true, -1)
+  ON CONFLICT (slug) DO NOTHING;
+
+-- One clap per reader per story. `reader` is a hash of the id in an anonymous cookie set on the first clap.
+-- posts.claps stays the story's total, so claps from before this table are kept.
+CREATE TABLE IF NOT EXISTS claps (
+  post_id     INT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  reader      TEXT NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (post_id, reader)
+);

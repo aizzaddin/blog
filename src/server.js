@@ -5,9 +5,11 @@ const express = require('express');
 const multer = require('multer');
 const db = require('./db');
 const posts = require('./posts');
+const pages = require('./pages');
 const auth = require('./auth');
 const { languages } = require('./languages');
 const social = require('./social');
+const turnstile = require('./turnstile');
 const {
   renderBody, streamBody, excerpt, isBlank, formatDate, parseTags,
 } = require('./content');
@@ -45,6 +47,7 @@ app.locals.excerpt = excerpt;
 app.locals.streamBody = streamBody;
 app.locals.formatDate = formatDate;
 app.locals.socialLinks = social.socialLinks;
+app.locals.turnstileSiteKey = turnstile.enabled ? turnstile.siteKey : null;
 app.locals.initials = (name = '') => name.split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 app.locals.siteName = process.env.SITE_NAME || 'wildanaizzaddin.';
 
@@ -66,6 +69,7 @@ app.locals.asset = (file) => {
 // Defaults so error pages render even if the session couldn't be loaded.
 app.locals.me = null;
 app.locals.siteOwner = null;
+app.locals.menuPages = [];
 app.locals.currentPath = '';
 
 
@@ -77,11 +81,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// The writer's name and photo for the header. Cleared when the about page is saved.
+// The writer's name and photo, and the pages in the menu, for the header.
+// Cleared when the about page or a page is saved.
 let siteOwner;
+let menuPages;
 app.use(wrap(async (req, res, next) => {
   siteOwner ??= await posts.defaultAuthor();
+  menuPages ??= await pages.menu();
   res.locals.siteOwner = siteOwner || null;
+  res.locals.menuPages = menuPages;
   next();
 }));
 
@@ -176,6 +184,11 @@ app.post('/login', wrap(async (req, res) => {
   if (!auth.sameOrigin(req)) return fail(403, 'This sign-in came from another site and was blocked.');
   const wait = auth.loginBlocked(req.ip);
   if (wait) return fail(429, `Too many attempts. Try again in ${wait} minute${wait === 1 ? '' : 's'}.`);
+  // Checked before the password, so bots never reach it. A failed check isn't counted as a wrong password.
+  const token = String(req.body['cf-turnstile-response'] || '');
+  if (!await turnstile.verify(token, { ip: req.ip, action: 'login', host: req.hostname })) {
+    return fail(400, 'We couldn’t confirm you’re not a bot. Wait for the check to finish, then sign in again.');
+  }
 
   const authorId = await auth.signIn(email, req.body.password);
   if (!authorId) {
@@ -200,28 +213,38 @@ app.get('/@:username', wrap(async (req, res) => {
   res.render('author', { title: author.name, author, list });
 }));
 
-app.get('/p/:slug', wrap(async (req, res) => {
-  const post = await posts.bySlug(req.params.slug);
-  if (!post || post.status !== 'published') {
-    return res.status(404).render('not-found', { title: 'Story not found' });
-  }
-  const [replies, more] = await Promise.all([
+// The story page. `draft` carries a response that couldn't be posted, so the reader doesn't lose it.
+async function renderPost(req, res, post, { draft = null, status = 200 } = {}) {
+  const [replies, more, clapped] = await Promise.all([
     posts.responses(post.id),
     posts.feed({ username: post.username, limit: 4 }),
+    posts.hasClapped(post.id, auth.readerId(req, res)),
   ]);
-  res.render('post', {
+  res.status(status).render('post', {
     title: post.title,
     description: excerpt(post),
     post,
     html: renderBody(post.body_html),
     replies,
+    clapped,
+    draft,
     more: more.filter((p) => p.id !== post.id).slice(0, 3),
   });
+}
+
+app.get('/p/:slug', wrap(async (req, res) => {
+  const post = await posts.bySlug(req.params.slug);
+  if (!post || post.status !== 'published') {
+    return res.status(404).render('not-found', { title: 'Story not found' });
+  }
+  await renderPost(req, res, post);
 }));
 
+// One clap per reader per story, remembered by an anonymous cookie. { clapped: false } takes it back.
 app.post('/p/:slug/clap', wrap(async (req, res) => {
-  const count = Math.min(Math.max(parseInt(req.body.count, 10) || 1, 1), 50);
-  const result = await posts.clap(req.params.slug, count);
+  if (!auth.sameOrigin(req)) return res.status(403).json({ error: 'This request came from another site and was blocked.' });
+  const clapped = req.body.clapped === true || req.body.clapped === 'true';
+  const result = await posts.setClap(req.params.slug, auth.readerId(req, res, { create: clapped }), clapped);
   if (!result) return res.status(404).json({ error: 'Story not found.' });
   res.json(result);
 }));
@@ -231,7 +254,13 @@ app.post('/p/:slug/responses', wrap(async (req, res) => {
   if (!post || post.status !== 'published') return res.status(404).render('not-found', { title: 'Story not found' });
   const name = String(req.body.name || '').trim().slice(0, 60);
   const body = String(req.body.body || '').trim().slice(0, 2000);
-  if (name && body) await posts.addResponse(post.id, name, body);
+  const fail = (error) => renderPost(req, res, post, { draft: { name, body, error }, status: 422 });
+  if (!name || !body) return fail('Add your name and a response before posting.');
+  const token = String(req.body['cf-turnstile-response'] || '');
+  if (!await turnstile.verify(token, { ip: req.ip, action: 'response', host: req.hostname })) {
+    return fail('We couldn’t confirm you’re not a bot. Wait for the check to finish, then post again.');
+  }
+  await posts.addResponse(post.id, name, body);
   res.redirect(`/p/${post.slug}#responses`);
 }));
 
@@ -296,6 +325,80 @@ app.post(['/write', '/write/:id'], requireWriter, wrap(async (req, res) => {
   }
   const saved = await posts.save({ ...input, id, authorId: req.author.id });
   res.redirect(saved.status === 'published' ? `/p/${saved.slug}` : '/drafts');
+}));
+
+// Pages -----------------------------------------------------------------------
+
+app.get('/pages', requireWriter, wrap(async (req, res) => {
+  res.render('pages', { title: 'Pages', list: await pages.all(), moved: String(req.query.moved || '') });
+}));
+
+const renderPageEditor = (res, { page, error = null, status = 200 }) =>
+  res.status(status).render('page-edit', { title: page.id ? 'Edit page' : 'New page', page, error, languages });
+
+app.get('/pages/new', requireWriter, (req, res) => {
+  renderPageEditor(res, { page: { title: '', slug: '', body_html: '', in_menu: true } });
+});
+
+// Topics and About can only be moved, so editing or deleting them is "not found" unless `movable`.
+async function findPage(req, res, { movable = false } = {}) {
+  const page = await pages.byId(parseInt(req.params.id, 10) || 0);
+  if (!page || (page.builtin && !movable)) {
+    res.status(404).render('not-found', { title: 'Page not found' });
+    return null;
+  }
+  return page;
+}
+
+app.get('/pages/:id/edit', requireWriter, wrap(async (req, res) => {
+  const page = await findPage(req, res);
+  if (page) renderPageEditor(res, { page });
+}));
+
+app.post(['/pages/new', '/pages/:id/edit'], requireWriter, wrap(async (req, res) => {
+  const existing = req.params.id ? await findPage(req, res) : null;
+  if (req.params.id && !existing) return;
+  const title = String(req.body.title || '').trim().slice(0, 120);
+  const page = {
+    id: existing ? existing.id : null,
+    title,
+    slug: pages.pageSlug(req.body.slug, title),
+    body_html: String(req.body.body || ''),
+    in_menu: req.body.in_menu === 'on',
+  };
+  const fail = (error) => renderPageEditor(res, { page, error, status: 422 });
+  if (!title) return fail('Add a title before saving.');
+  if (!page.slug) return fail('Add an address for the page, using letters and numbers.');
+  if (pages.isReserved(page.slug)) return fail(`/${page.slug} is already used by the blog. Pick another address.`);
+  const saved = await pages.save({ id: page.id, title, slug: page.slug, body: page.body_html, inMenu: page.in_menu });
+  if (!saved) return fail(`Another page already uses /${page.slug}. Pick another address.`);
+  menuPages = null;
+  res.redirect(`/${saved.slug}`);
+}));
+
+// Up and down buttons on the pages list. Back on the list, the same button keeps focus.
+app.post('/pages/:id/move', requireWriter, wrap(async (req, res) => {
+  const page = await findPage(req, res, { movable: true });
+  if (!page) return;
+  const direction = req.body.direction === 'up' ? 'up' : 'down';
+  await pages.move(page.id, direction === 'up' ? -1 : 1);
+  menuPages = null;
+  res.redirect(`/pages?moved=${page.id}-${direction}#page-${page.id}`);
+}));
+
+app.post('/pages/:id/delete', requireWriter, wrap(async (req, res) => {
+  const page = await findPage(req, res);
+  if (!page) return;
+  await pages.remove(page.id);
+  menuPages = null;
+  res.redirect('/pages');
+}));
+
+// A page lives at the top level (/now, /uses), so this route comes after every other one.
+app.get('/:slug', wrap(async (req, res, next) => {
+  const page = await pages.bySlug(req.params.slug);
+  if (!page) return next();
+  res.render('page', { title: page.title, page, html: renderBody(page.body_html) });
 }));
 
 app.use((req, res) => res.status(404).render('not-found', { title: 'Page not found' }));

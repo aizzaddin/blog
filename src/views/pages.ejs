@@ -1,0 +1,42 @@
+<%- include('partials/head', { title }) %>
+<div class="<%= ui.column %>">
+  <header class="mt-12 mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h1 class="<%= ui.storyTitle %>">Pages</h1>
+      <p class="mt-2 text-ink-soft">The header menu, in this order. Add standalone pages like /now or /uses.</p>
+    </div>
+    <a class="<%= ui.button %>" href="/pages/new">New page</a>
+  </header>
+  <%
+    const move = 'grid size-8 cursor-pointer place-items-center rounded-full text-ink-soft hover:bg-wash hover:text-ink disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent';
+    const chevron = (d) => `<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+  %>
+  <ol class="border-t border-rule">
+    <% list.forEach((p, i) => { %>
+      <li id="page-<%= p.id %>" class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-rule py-5">
+        <div class="min-w-0">
+          <% if (p.builtin) { %>
+            <a class="text-xl leading-snug font-semibold hover:underline" href="/<%= p.slug %>"><%= p.title %></a>
+            <p class="mt-1.5 <%= ui.meta %>">
+              <span>Built into the blog, always in the menu</span>
+              <% if (p.slug === 'about') { %><a class="<%= ui.tag %>" href="/about/edit">Edit about page</a><% } %>
+            </p>
+          <% } else { %>
+            <a class="text-xl leading-snug font-semibold hover:underline" href="/pages/<%= p.id %>/edit"><%= p.title %></a>
+            <p class="mt-1.5 <%= ui.meta %>">
+              <a class="<%= ui.tag %>" href="/<%= p.slug %>">/<%= p.slug %></a>
+              <span><%= p.in_menu ? 'In the menu' : 'Not in the menu' %></span>
+              <span>Edited <%= formatDate(p.updated_at) %></span>
+            </p>
+          <% } %>
+        </div>
+        <form class="flex gap-1" method="post" action="/pages/<%= p.id %>/move">
+          <% [['up', 'm6 15 6-6 6 6', i === 0], ['down', 'm6 9 6 6 6-6', i === list.length - 1]].forEach(([dir, d, end]) => { %>
+            <button class="<%= move %>" type="submit" name="direction" value="<%= dir %>" aria-label="Move <%= p.title %> <%= dir %>" title="Move <%= dir %>"<%= end ? ' disabled' : '' %><%= !end && moved === `${p.id}-${dir}` ? ' autofocus' : '' %>><%- chevron(d) %></button>
+          <% }) %>
+        </form>
+      </li>
+    <% }) %>
+  </ol>
+</div>
+<%- include('partials/foot') %>

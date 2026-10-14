@@ -32,7 +32,9 @@ Requirements: Node.js 24 or newer and a PostgreSQL database.
 
    CSS and the editor script rebuild when you save, and the server restarts on code changes. Reload the browser to see changes.
 
-Sign in at `/login`. The writing pages (`/write`, `/drafts`, `/about/edit`) show "Page not found" to anyone who isn't signed in.
+Sign in at `/login`. The writing pages (`/write`, `/drafts`, `/pages`, `/about/edit`) show "Page not found" to anyone who isn't signed in.
+
+Standalone pages such as `/now` or `/uses` are made under **Pages** → **New page**. Each lives at its own address and can be shown in the header menu. The Pages list sets the menu's order, Topics and About included, with its up and down buttons.
 
 ## Deploy with Docker
 
@@ -61,6 +63,9 @@ Or put `DATABASE_URL` in `.env` and run `docker compose up -d --build`.
 | `PORT` | no | Port to listen on, default `3000` |
 | `NODE_ENV` | no | `production` in the Docker image |
 | `TRUST_PROXY` | no | Number of proxies in front of the app |
+| `TURNSTILE_SITE_KEY` | no | Cloudflare Turnstile site key for the response and sign-in forms. Needs the secret key too |
+| `TURNSTILE_SECRET_KEY` | no | Cloudflare Turnstile secret key. With both keys unset, the forms aren't checked |
+| `TURNSTILE_HOSTNAMES` | no | Domains the forms are served from, comma-separated, e.g. `example.com,www.example.com`. Default: the address the form was opened on |
 | `SITE_NAME` | no | Name in the header, default `wildanaizzaddin.`. The home page tab shows the writer's name instead |
 
 ## Image guidelines

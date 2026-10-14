@@ -1,0 +1,8 @@
+<%#
+  Cloudflare Turnstile for a form. Usually invisible; Cloudflare only shows it when it wants the reader to confirm.
+  Params: action (the name the server checks, e.g. 'login'). Renders nothing while Turnstile is off.
+%>
+<% if (turnstileSiteKey) { %>
+  <div class="cf-turnstile empty:hidden" data-sitekey="<%= turnstileSiteKey %>" data-action="<%= action %>" data-theme="auto" data-size="flexible" data-appearance="interaction-only"></div>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<% } %>
