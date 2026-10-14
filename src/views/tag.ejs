@@ -1,0 +1,11 @@
+<%- include('partials/head', { title }) %>
+<div class="<%= ui.column %>">
+  <header class="pt-12 pb-6">
+    <h1 class="<%= ui.storyTitle %>"><%= tag.name %></h1>
+    <p class="mt-2 text-ink-soft"><%= list.length %> <%= list.length === 1 ? 'story' : 'stories' %>. <a class="<%= ui.tag %>" href="/topics">All topics</a></p>
+  </header>
+  <ul class="border-t border-rule">
+    <% list.forEach((p) => { %><%- include('partials/row', { p }) %><% }) %>
+  </ul>
+</div>
+<%- include('partials/foot') %>

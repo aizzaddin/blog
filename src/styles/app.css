@@ -5,10 +5,11 @@
 @source "../editor";
 @source "../../public/app.js";
 
-/* Neutral greys, one family (Open Sans; Roboto Mono for code). Hierarchy comes from weight and size, not colour.
+/* Neutral greys, one family (Libre Franklin; Roboto Mono for code). Hierarchy comes from weight and size, not colour.
+   Titles are the one loud thing: Franklin at semibold, set tight. Everything around them stays quiet.
    Colours are variables so dark mode swaps them without dark: prefixes in templates. */
 @theme {
-  --font-sans: "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Libre Franklin", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "Roboto Mono", ui-monospace, Menlo, monospace;
 
   --color-paper: #f3f3f3;
@@ -34,10 +35,10 @@
 }
 
 @layer base {
-  /* Theme: follows the system unless the reader picks Light or Night (data-theme on <html>). */
+  /* Theme: follows the device's light or dark setting. */
   :root { color-scheme: light; }
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
+    :root {
       --color-paper: #1f1f1f;
       --color-surface: #262626;
       --color-ink: #e2e2e2;
@@ -51,28 +52,6 @@
       color-scheme: dark;
     }
   }
-  :root[data-theme="dark"] {
-    --color-paper: #1f1f1f;
-    --color-surface: #262626;
-    --color-ink: #e2e2e2;
-    --color-ink-soft: #9b9b9b;
-    --color-rule: #383838;
-    --color-wash: #2e2e2e;
-    --color-select: #4a4a4a;
-    --color-code: #151515;
-    --color-code-bar: #1b1b1b;
-    --color-code-rule: #2f2f2f;
-    color-scheme: dark;
-  }
-
-  /* Theme button: a sun while the page is dark, a moon while it's light. */
-  :root [data-show-when="dark"] { display: none; }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) [data-show-when="dark"] { display: contents; }
-    :root:not([data-theme="light"]) [data-show-when="light"] { display: none; }
-  }
-  :root[data-theme="dark"] [data-show-when="dark"] { display: contents; }
-  :root[data-theme="dark"] [data-show-when="light"] { display: none; }
 
   ::selection { background: var(--color-select); color: var(--color-ink); }
 
@@ -80,6 +59,11 @@
     outline: 2px solid var(--color-ink);
     outline-offset: 3px;
     border-radius: 2px;
+  }
+
+  /* In-page jumps (Back to top) glide, unless the reader has asked for less motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -93,11 +77,11 @@
     @apply pt-3 text-lg leading-[1.75] wrap-break-word max-sm:text-[1.0625rem];
   }
   .prose > * { @apply mt-[1.6em]; }
-  .prose h2 { @apply mt-[2em] text-2xl leading-snug font-medium tracking-[-0.01em]; }
-  .prose h3 { @apply mt-[1.8em] text-[1.3125rem] leading-snug font-medium; }
+  .prose h2 { @apply mt-[2em] text-2xl leading-snug font-semibold tracking-[-0.015em]; }
+  .prose h3 { @apply mt-[1.8em] text-[1.3125rem] leading-snug font-semibold; }
   .prose h2 + *, .prose h3 + * { @apply mt-[0.5em]; }
   .prose a { @apply underline decoration-1 underline-offset-[3px]; }
-  .prose strong { @apply font-bold; }
+  .prose strong { @apply font-semibold; }
   .prose blockquote { @apply border-l-[3px] border-ink pl-[22px] text-ink-soft; }
   .prose blockquote p { @apply m-0; }
   .prose ul { @apply list-disc pl-[1.4em]; }
@@ -113,6 +97,15 @@
   .prose div[data-youtube-video] iframe { @apply aspect-video h-auto w-full rounded-sm; }
   .prose hr { @apply my-[2.4em] h-auto overflow-visible border-0 text-center; }
   .prose hr::after { content: "\2042"; @apply text-xl text-ink-soft; }
+}
+
+/* Home page stream: stories one after another, parted by a short centred rule.
+   (Not the asterism: that already marks a break inside a story.) */
+@layer components {
+  .stream-entry + .stream-entry::before {
+    content: "";
+    @apply mx-auto mb-20 block h-px w-16 bg-ink-soft max-sm:mb-14;
+  }
 }
 
 /* Code snapshot: a dark grey panel with the language and a copy button.

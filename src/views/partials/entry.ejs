@@ -1,38 +1,20 @@
-<% const image = coverImage(p); const text = preview(p); %>
-<article class="border-b border-rule last:border-b-0 <%= featured ? 'pt-10 pb-11' : 'py-8 max-sm:py-6' %>">
-  <% if (featured && image) { %>
-    <a class="mb-6 block" href="/p/<%= p.slug %>" tabindex="-1" aria-hidden="true">
-      <img class="h-[320px] w-full rounded-sm bg-wash object-cover max-sm:h-[200px]" src="<%= image %>" alt="" loading="lazy">
+<% const body = streamBody(p); %>
+<article class="stream-entry pb-20 max-sm:pb-14">
+  <h2 class="<%= ui.storyTitle %>">
+    <a class="decoration-2 underline-offset-[6px] hover:underline" href="/p/<%= p.slug %>"><%= p.title %></a>
+  </h2>
+  <% if (p.subtitle) { %><p class="mt-2.5 text-xl leading-[1.4] text-ink-soft max-sm:text-lg"><%= p.subtitle %></p><% } %>
+  <p class="mt-3 <%= ui.meta %>">
+    <a class="hover:text-ink" href="/p/<%= p.slug %>"><time datetime="<%= new Date(p.published_at).toISOString() %>"><%= formatDate(p.published_at) %></time></a>
+    <span><%= p.reading_min %> min read</span>
+  </p>
+  <% if (p.cover_url) { %>
+    <a class="mt-10 mb-4 block" href="/p/<%= p.slug %>" tabindex="-1" aria-hidden="true">
+      <img class="mx-auto h-auto max-w-full rounded-sm" src="<%= p.cover_url %>" alt="" loading="lazy">
     </a>
   <% } %>
-  <a class="group inline-flex items-center gap-2 text-sm" href="/@<%= p.username %>">
-    <%- include('byline', { p }) %>
-    <span class="group-hover:underline"><%= p.author_name %></span>
-  </a>
-  <div class="<%= !featured && image ? 'grid grid-cols-[minmax(0,1fr)_160px] items-start gap-8 max-sm:grid-cols-[minmax(0,1fr)_80px] max-sm:gap-4' : '' %>">
-    <div>
-      <h2 class="<%= featured
-        ? 'mt-4 mb-1.5 max-w-[22ch] text-[clamp(2rem,6vw,2.75rem)] leading-[1.08] font-light tracking-[-0.025em]'
-        : 'mt-3 mb-1 text-[1.375rem] leading-tight font-medium tracking-[-0.01em] max-sm:text-lg' %>">
-        <a class="decoration-1 underline-offset-4 hover:underline" href="/p/<%= p.slug %>"><%= p.title %></a>
-      </h2>
-      <% if (p.subtitle) { %>
-        <p class="<%= featured ? 'text-xl text-ink max-sm:text-lg' : 'text-[1.0625rem] text-ink max-sm:text-base' %>"><%= p.subtitle %></p>
-      <% } %>
-      <% if (text) { %>
-        <p class="mt-2 text-ink-soft <%= featured ? 'line-clamp-3 text-base' : 'line-clamp-3 text-[0.9375rem] max-sm:line-clamp-2' %>"><%= text %></p>
-      <% } %>
-    </div>
-    <% if (!featured && image) { %>
-      <a class="mt-3 block" href="/p/<%= p.slug %>" tabindex="-1" aria-hidden="true">
-        <img class="h-[107px] w-40 rounded-sm bg-wash object-cover max-sm:size-20" src="<%= image %>" alt="" loading="lazy">
-      </a>
-    <% } %>
-  </div>
-  <p class="mt-4 <%= ui.meta %>">
-    <time datetime="<%= new Date(p.published_at).toISOString() %>"><%= formatDate(p.published_at) %></time>
-    <span><%= p.reading_min %> min read</span>
-    <% if (p.claps > 0) { %><span class="inline-flex items-center gap-1" aria-label="<%= p.claps %> claps"><%- include('clap-icon', { size: 15 }) %><%= p.claps %></span><% } %>
-    <% if (p.tags[0]) { %><a class="<%= ui.tag %>" href="/tag/<%= p.tags[0].slug %>"><%= p.tags[0].name %></a><% } %>
-  </p>
+  <div class="prose"><%- body.html %></div>
+  <% if (body.cut) { %>
+    <p class="mt-8"><a class="font-semibold underline decoration-1 underline-offset-[3px] hover:decoration-2" href="/p/<%= p.slug %>">Continue reading</a></p>
+  <% } %>
 </article>

@@ -78,32 +78,63 @@ function plainText(html) {
   })).replace(/\s+/g, ' ').trim();
 }
 
-function readingMinutes(html) {
+// Reading effort in words: a line of code counts as three.
+function wordWeight(html) {
   const words = plainText(html).split(' ').filter(Boolean).length;
-  const codeLines = (String(html).match(/<pre[\s\S]*?<\/pre>/g) || []).join('').split('\n').length;
-  return Math.max(1, Math.round((words + codeLines * 3) / 200));
+  const code = (String(html).match(/<pre[\s\S]*?<\/pre>/g) || []).join('');
+  return words + (code ? code.split('\n').length * 3 : 0);
+}
+
+function readingMinutes(html) {
+  return Math.max(1, Math.round(wordWeight(html) / 200));
+}
+
+const VOID_TAGS = new Set(['br', 'hr', 'img']);
+
+// The body's top-level blocks (paragraphs, headings, lists, code, images…) as HTML strings.
+function topBlocks(html) {
+  const blocks = [];
+  let depth = 0;
+  let start = 0;
+  for (const m of html.matchAll(/<(\/?)([a-z][a-z0-9]*)\b[^>]*>/gi)) {
+    const end = m.index + m[0].length;
+    if (!VOID_TAGS.has(m[2].toLowerCase())) depth += m[1] ? -1 : 1;
+    if (depth === 0) {
+      blocks.push(html.slice(start, end));
+      start = end;
+    }
+  }
+  if (html.slice(start).trim()) blocks.push(html.slice(start));
+  return blocks;
+}
+
+// For the home page: short stories in full, long ones cut after their opening at a block boundary.
+function streamBody(post, keep = 140) {
+  const html = sanitizeBody(post.body_html);
+  if (post.reading_min <= 2) return { html: renderBody(html), cut: false };
+  const blocks = topBlocks(html);
+  const kept = [];
+  let weight = 0;
+  for (const block of blocks) {
+    if (weight >= keep) break;
+    kept.push(block);
+    weight += wordWeight(block);
+  }
+  while (kept.length > 1 && /^\s*<h[23]\b/.test(kept.at(-1))) kept.pop();
+  return { html: renderBody(kept.join('')), cut: kept.length < blocks.length };
 }
 
 function truncate(text, length) {
   return text.length > length ? text.slice(0, length).replace(/\s+\S*$/, '') + '…' : text;
 }
 
-// The opening of the story, shown under the title in lists.
+// The opening of the story, for the page description when there's no subtitle.
 function preview(post, length = 240) {
   return truncate(plainText(post.body_html), length);
 }
 
 function excerpt(post, length = 160) {
   return post.subtitle || preview(post, length);
-}
-
-function firstImage(html) {
-  const match = /<img[^>]*\ssrc="([^"]+)"/.exec(html || '');
-  return match ? decodeEntities(match[1]) : null;
-}
-
-function coverImage(post) {
-  return post.cover_url || firstImage(post.body_html);
 }
 
 function isBlank(html) {
@@ -126,6 +157,6 @@ function parseTags(input) {
 }
 
 module.exports = {
-  slugify, postSlug, sanitizeBody, renderBody, readingMinutes, preview, excerpt,
-  coverImage, isBlank, formatDate, parseTags,
+  slugify, postSlug, sanitizeBody, renderBody, streamBody, readingMinutes, preview, excerpt,
+  isBlank, formatDate, parseTags,
 };

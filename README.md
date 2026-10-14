@@ -1,6 +1,6 @@
 # wildanaizzaddin
 
-A personal, minimalist blog with a single writer. Stories are written in a rich text editor with images, YouTube videos and syntax-highlighted code blocks.
+A personal, minimalist blog with a single writer. The home page is a stream: short stories appear in full, long ones show their opening with a link to the rest. Stories are written in a rich text editor with images, YouTube videos and syntax-highlighted code blocks.
 
 Built with Express, EJS, PostgreSQL, Tailwind CSS and TipTap.
 
@@ -61,7 +61,7 @@ Or put `DATABASE_URL` in `.env` and run `docker compose up -d --build`.
 | `PORT` | no | Port to listen on, default `3000` |
 | `NODE_ENV` | no | `production` in the Docker image |
 | `TRUST_PROXY` | no | Number of proxies in front of the app |
-| `SITE_NAME` | no | Title in the header and browser tabs, default `wildanaizzaddin` |
+| `SITE_NAME` | no | Name in the header, default `wildanaizzaddin.`. The home page tab shows the writer's name instead |
 
 ## Image guidelines
 
@@ -69,33 +69,11 @@ Uploads accept JPG, PNG, WebP, GIF and AVIF up to 8 MB. SVG isn't accepted.
 
 ### Cover images
 
-The cover is shown in story lists. Without one, the first image in the story is used. Each spot has a fixed size, and the image is cropped to fill it, keeping the centre. It's never stretched.
+The cover is shown above the story on the home page, at its own shape and never cropped, up to the text column's width of 680 px. It isn't shown on the story's own page, so put an image in the story too if readers should see it there.
 
-| Where | Display size | Shape |
-|---|---|---|
-| Top story on the home page, desktop | 680 × 320 px | about 2.1 : 1 |
-| Top story on the home page, phone | full width × 200 px | about 1.7 : 1 |
-| Other stories in lists, desktop | 160 × 107 px | 3 : 2 |
-| Other stories in lists, phone | 80 × 80 px | square |
+**Recommended: about 1400 px wide, any shape.** Landscape images sit best in the stream. A tall portrait cover pushes the story's opening far down the page.
 
-**Recommended: 1600 × 900 px (16:9).** It sits between the wide banner and the square thumbnail, so no spot crops it badly, and it stays sharp on high-resolution screens.
-
-- **Keep the subject in the centre.** The square phone thumbnail keeps only the middle.
-- **Avoid text in the image.** Some spots cut it off.
 - **Aim for under 500 KB.** Export as JPG or WebP and compress before uploading.
-
-### Square (1:1) covers
-
-Square images work, but they lose their top and bottom in the wide spots:
-
-| Where | Part of a square image that shows |
-|---|---|
-| Top story banner, desktop | the middle 47% of the height |
-| Top story banner, phone | the middle 58% of the height |
-| List thumbnail, desktop | the middle 67% of the height |
-| List thumbnail, phone | all of it |
-
-Keep the subject in the middle band, and use at least 1400 × 1400 px so the banner stays sharp.
 
 ### Images inside a story
 

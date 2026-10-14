@@ -65,6 +65,8 @@ CREATE INDEX IF NOT EXISTS responses_post_idx ON responses (post_id, created_at)
 ALTER TABLE authors ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE authors ADD COLUMN IF NOT EXISTS password_hash TEXT;
 ALTER TABLE authors ADD COLUMN IF NOT EXISTS about_html TEXT NOT NULL DEFAULT '';
+-- Usernames for the footer's social links, e.g. {"github": "name"}.
+ALTER TABLE authors ADD COLUMN IF NOT EXISTS social JSONB NOT NULL DEFAULT '{}';
 CREATE UNIQUE INDEX IF NOT EXISTS authors_email_idx ON authors (lower(email));
 
 -- Signed-in sessions. Only a hash of the cookie token is stored.

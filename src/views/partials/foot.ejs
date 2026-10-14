@@ -1,7 +1,18 @@
   </main>
   <footer class="mt-16 border-t border-rule px-6 pt-10 pb-12 max-sm:px-4">
     <div class="text-center text-[0.8125rem] text-ink-soft <%= ui.column %>">
-      <p>© <%= new Date().getFullYear() %> <%= siteName %></p>
+      <% const links = socialLinks(siteOwner); %>
+      <% if (links.length) { %>
+        <ul class="mb-5 flex justify-center gap-2" aria-label="Elsewhere">
+          <% links.forEach((l) => { %>
+            <li><a class="grid size-9 place-items-center rounded-full hover:bg-wash hover:text-ink" href="<%= l.href %>" rel="me noopener" aria-label="<%= l.label %>" title="<%= l.label %>"><%- l.icon %></a></li>
+          <% }) %>
+        </ul>
+      <% } %>
+      <p class="flex flex-wrap justify-center gap-x-6 gap-y-1">
+        <span>© <%= new Date().getFullYear() %> <%= siteName %></span>
+        <a class="underline decoration-rule underline-offset-[3px] hover:text-ink hover:decoration-ink" href="#top">Back to top</a>
+      </p>
     </div>
   </footer>
   <script src="<%= asset('app.js') %>" defer></script>

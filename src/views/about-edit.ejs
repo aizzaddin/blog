@@ -3,7 +3,7 @@
 <form data-editor-form class="mx-auto grid max-w-[1040px] items-start gap-10 pt-10 pb-16 lg:grid-cols-[minmax(0,680px)_280px] lg:justify-between" method="post" action="/about/edit">
   <div class="min-w-0">
     <% if (error) { %><p class="mb-6 border-l-[3px] border-ink bg-wash px-4 py-3" role="alert"><%= error %></p><% } %>
-    <h1 class="text-[clamp(2.125rem,6.5vw,3rem)] leading-[1.1] font-light tracking-[-0.025em]">About page</h1>
+    <h1 class="text-[clamp(2rem,6vw,2.75rem)] leading-[1.08] font-semibold tracking-[-0.03em]">About page</h1>
     <p class="mt-2 text-ink-soft">Tell readers who you are and what you write about.</p>
     <div class="mt-6">
       <%- include('partials/rich-editor', { html: owner.about_html, placeholder: 'Introduce yourself…', label: 'About you' }) %>
@@ -28,8 +28,21 @@
       <div class="grid gap-2">
         <label class="font-medium" for="bio">Short bio</label>
         <textarea class="<%= ui.input %>" id="bio" name="bio" rows="3" maxlength="200"><%= owner.bio %></textarea>
-        <p class="<%= ui.quiet %>">Shown under your name and at the end of every story.</p>
+        <p class="<%= ui.quiet %>">Shown under your name on the about page.</p>
       </div>
+    </section>
+
+    <section class="<%= panel %> grid gap-4" aria-labelledby="social-title">
+      <div>
+        <h2 id="social-title" class="text-base font-medium">Social accounts</h2>
+        <p class="mt-1 <%= ui.quiet %>">Your username on each. Icons show in the footer; leave a field empty to hide it.</p>
+      </div>
+      <% networks.forEach((n) => { %>
+        <div class="grid gap-2">
+          <label class="font-medium" for="social_<%= n.key %>"><%= n.label %></label>
+          <input class="<%= ui.input %>" id="social_<%= n.key %>" name="social_<%= n.key %>" maxlength="100" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="username" value="<%= (owner.social || {})[n.key] || '' %>">
+        </div>
+      <% }) %>
     </section>
 
     <section class="<%= panel %>" aria-labelledby="photo-title">
