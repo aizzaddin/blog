@@ -10,6 +10,7 @@ const auth = require('./auth');
 const { languages } = require('./languages');
 const social = require('./social');
 const turnstile = require('./turnstile');
+const images = require('./images');
 const {
   renderBody, streamBody, excerpt, isBlank, formatDate, parseTags,
 } = require('./content');
@@ -95,20 +96,24 @@ app.use(wrap(async (req, res, next) => {
 
 const requireWriter = auth.requireAuth;
 
-const IMAGE_TYPES = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif', 'image/avif': '.avif' };
+const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
 
+// Uploads are held in memory, shrunk (see images.js), then written to uploads/<year>/<month>/.
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      const now = new Date();
-      const dir = path.join(UPLOAD_DIR, String(now.getFullYear()), String(now.getMonth() + 1).padStart(2, '0'));
-      fs.mkdir(dir, { recursive: true }, (err) => cb(err, dir));
-    },
-    filename: (req, file, cb) => cb(null, crypto.randomBytes(12).toString('hex') + IMAGE_TYPES[file.mimetype]),
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 8 * 1024 * 1024, files: 1 },
-  fileFilter: (req, file, cb) => cb(null, Boolean(IMAGE_TYPES[file.mimetype])),
+  fileFilter: (req, file, cb) => cb(null, IMAGE_TYPES.has(file.mimetype)),
 });
+
+async function saveUpload(file, purpose) {
+  const { buffer, ext } = await images.shrink(file.buffer, purpose);
+  const now = new Date();
+  const dir = path.join(UPLOAD_DIR, String(now.getFullYear()), String(now.getMonth() + 1).padStart(2, '0'));
+  await fs.promises.mkdir(dir, { recursive: true });
+  const filePath = path.join(dir, crypto.randomBytes(12).toString('hex') + ext);
+  await fs.promises.writeFile(filePath, buffer);
+  return '/' + path.relative(PUBLIC_DIR, filePath).split(path.sep).join('/');
+}
 
 app.get('/', wrap(async (req, res) => {
   res.render('home', { title: null, list: await posts.feed() });
@@ -269,7 +274,13 @@ app.post('/uploads', requireWriter, (req, res) => {
     if (err?.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'Images can be up to 8 MB.' });
     if (err) return res.status(400).json({ error: 'The image couldn’t be uploaded. Try again.' });
     if (!req.file) return res.status(415).json({ error: 'Use a JPG, PNG, WebP, GIF or AVIF image.' });
-    res.json({ url: '/' + path.relative(PUBLIC_DIR, req.file.path).split(path.sep).join('/') });
+    const purpose = req.body.purpose === 'avatar' ? 'avatar' : 'story';
+    saveUpload(req.file, purpose)
+      .then((url) => res.json({ url }))
+      .catch((error) => {
+        console.error(`Upload failed: ${error.message}`);
+        res.status(415).json({ error: 'That image couldn’t be read. Try saving it again as a JPG or PNG.' });
+      });
   });
 });
 

@@ -42,9 +42,11 @@ const imageFile = document.getElementById('image-file');
 
 const say = (message) => { status.textContent = message; };
 
-async function uploadImage(file) {
+// purpose: 'avatar' for the profile photo (kept small), otherwise 'story'.
+async function uploadImage(file, purpose = 'story') {
   if (!file.type.startsWith('image/')) throw new Error('Use a JPG, PNG, WebP, GIF or AVIF image.');
   const data = new FormData();
+  data.append('purpose', purpose);
   data.append('image', file);
   const res = await fetch('/uploads', { method: 'POST', body: data });
   const json = await res.json().catch(() => ({}));
@@ -236,7 +238,7 @@ document.querySelectorAll('[data-image-field]').forEach((wrap) => {
     if (!chosen) return;
     say('Uploading image…');
     try {
-      set(await uploadImage(chosen));
+      set(await uploadImage(chosen, wrap.dataset.purpose));
       say('Image added.');
     } catch (err) {
       say(err.message);

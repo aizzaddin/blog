@@ -1,5 +1,6 @@
-<%# Image picker that uploads right away and keeps the URL in a hidden field. Params: name, value, alt, shape. %>
-<div data-image-field>
+<%# Image picker that uploads right away and keeps the URL in a hidden field.
+    Params: name, value, alt, shape, purpose ('avatar' keeps the image small; default 'story'). %>
+<div data-image-field data-purpose="<%= typeof purpose !== 'undefined' ? purpose : 'story' %>">
   <input type="hidden" name="<%= name %>" value="<%= value || '' %>" data-role="input">
   <img class="mt-3 bg-wash object-cover <%= shape %>" src="<%= value || '' %>" alt="<%= alt %>" data-role="preview" <%= value ? '' : 'hidden' %>>
   <div class="mt-3 flex flex-wrap gap-2">

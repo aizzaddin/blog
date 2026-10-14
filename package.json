@@ -25,7 +25,8 @@
     "start": "npm run build && node src/server.js",
     "db:migrate": "node db/migrate.js",
     "db:seed": "node db/seed.js",
-    "set-password": "node db/set-password.js"
+    "set-password": "node db/set-password.js",
+    "images:shrink": "node scripts/shrink-uploads.js"
   },
   "dependencies": {
     "dotenv": "^18.0.7",
@@ -35,7 +36,8 @@
     "marked": "^18.1.0",
     "multer": "^2.4.0",
     "pg": "^8.23.1",
-    "sanitize-html": "^2.18.0"
+    "sanitize-html": "^2.18.0",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
