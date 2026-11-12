@@ -149,3 +149,26 @@
   .prose-editor .ProseMirror div[data-youtube-video] { @apply cursor-move; }
   .prose-editor .ProseMirror-gapcursor::after { @apply border-ink; }
 }
+
+/* GitHub contribution calendar on the about page. Greys from the ink colour, so it follows dark mode
+   and stays as quiet as the rest of the page. */
+@layer components {
+  .contrib-scroll { overflow-x: auto; direction: rtl; scrollbar-width: thin; }
+  /* Cells grow to fill the column on wide screens and never shrink below 10px: below that it scrolls. */
+  .contrib { direction: ltr; display: grid; gap: 4px; width: max(100%, calc(var(--weeks) * 12px)); }
+  .contrib-months, .contrib-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--weeks), minmax(0, 1fr));
+    column-gap: 2px;
+  }
+  .contrib-months { @apply text-[0.6875rem] text-ink-soft; }
+  .contrib-months span { white-space: nowrap; }
+  .contrib-grid { grid-auto-flow: column; grid-template-rows: repeat(7, auto); row-gap: 2px; }
+  .contrib-grid .contrib-day { width: 100%; height: auto; aspect-ratio: 1; }
+  .contrib-day { display: inline-block; width: 10px; height: 10px; border-radius: 2px; background: var(--color-wash); }
+  .contrib-pad { visibility: hidden; }
+  .contrib-day[data-level="1"] { background: color-mix(in srgb, var(--color-ink) 25%, var(--color-wash)); }
+  .contrib-day[data-level="2"] { background: color-mix(in srgb, var(--color-ink) 45%, var(--color-wash)); }
+  .contrib-day[data-level="3"] { background: color-mix(in srgb, var(--color-ink) 70%, var(--color-wash)); }
+  .contrib-day[data-level="4"] { background: var(--color-ink); }
+}
