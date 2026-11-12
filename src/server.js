@@ -11,6 +11,7 @@ const { languages } = require('./languages');
 const social = require('./social');
 const turnstile = require('./turnstile');
 const images = require('./images');
+const contributions = require('./contributions');
 const {
   renderBody, streamBody, excerpt, isBlank, formatDate, parseTags,
 } = require('./content');
@@ -134,8 +135,15 @@ app.get('/topics', wrap(async (req, res) => {
 app.get('/about', wrap(async (req, res) => {
   const owner = await posts.defaultAuthor();
   if (!owner) return res.status(404).render('not-found', { title: 'Page not found' });
-  const recent = await posts.feed({ username: owner.username, limit: 3 });
-  res.render('about', { title: 'About', owner, html: renderBody(owner.about_html), recent });
+  const github = owner.social && owner.social.github;
+  // Don't hold the page for GitHub: a slow first fetch keeps going and fills the cache for the next visit.
+  const [recent, cal] = await Promise.all([
+    posts.feed({ username: owner.username, limit: 3 }),
+    Promise.race([contributions.calendar(github), new Promise((r) => setTimeout(r, 1500, null))]),
+  ]);
+  res.render('about', {
+    title: 'About', owner, html: renderBody(owner.about_html), recent, cal, github,
+  });
 }));
 
 app.get('/about/edit', requireWriter, wrap(async (req, res) => {

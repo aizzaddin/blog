@@ -27,5 +27,7 @@
       <p class="mt-4 text-ink-soft"><a class="<%= ui.tag %>" href="/@<%= owner.username %>">See all stories</a></p>
     </section>
   <% } %>
+
+  <% if (cal) { %><%- include('partials/contributions', { cal, username: github }) %><% } %>
 </article>
 <%- include('partials/foot') %>
